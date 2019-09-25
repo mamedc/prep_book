@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+	<style>
+		
+		.aligncenter {
+		    text-align: center;
+		}
+        
+        .center-fit {
+        	max-width: 50%;
+            max-height: 100vh;
+        }
+
+        #myCanvas {
+        	border: 1px solid #4287f5;
+        }
+
+	 </style>
+
+
+	<script type="text/javascript">
+
+		window.onload = function(){
+
+			var canvas = document.getElementById('demo'),
+			    ctx = canvas.getContext('2d'),
+			    line = new Line(ctx),
+			    img = new Image;
+			
+			ctx.strokeStyle = '#eb4034'; ctx.lineWidth = 2;
+			
+			function Line(ctx) {
+			    var me = this;
+			    this.x1 = 0; this.x2 = 0; this.y1 = 0; this.y2 = 0;
+			    this.draw = function() {
+			        ctx.beginPath();
+			        ctx.moveTo(me.x1, me.y1);
+			        ctx.lineTo(me.x2, me.y2);
+			        ctx.stroke();
+			    }
+			}
+			
+			img.onload = start;
+			img.src = "{{ current_img_path }}";
+
+			function start() {
+			    ctx.drawImage(img, 0, 0, demo.width, demo.height);
+			    canvas.onmousemove = updateLine;
+			}
+
+			function updateLine(e) {
+			    var r = canvas.getBoundingClientRect(),
+			        x = e.clientX - r.left,
+			        y = e.clientY - r.top;
+			    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+			    line.x1 = 0;
+			    line.y1 = y;
+			    line.x2 = canvas.width;
+			    line.y2 = y;
+			    line.draw();
+			}
+
+			// Mouse click
+			var canvas = document.getElementById('demo');
+	        canvas.addEventListener('mousedown', getPosition, false);
+		}
+
+		function getPosition(event) {
+	    	var x = new Number();
+	        var y = new Number();
+	        var canvas = document.getElementById('demo');
+
+			x = event.x;
+	        y = event.y; 
+	        x -= canvas.offsetLeft;
+	        y -= canvas.offsetTop;
+
+	        // Send value to aux form and submit
+	        document.getElementById('trim_input').value = y;
+	        document.getElementById('submit_btn').click(); 
+		}
+
+	</script>
+
+	<title>Header</title>
+</head>
+
+<body>
+<h2 class="aligncenter">Trim header</h2>
+<h3 class="aligncenter">Image {{ img_number }} of {{ img_list_len }} - {{ current_img_file }}</h3>
+<p class="aligncenter"><canvas id="demo" width = "1000px" height="1333.333333px"></canvas></p>
+
+<br>
+<form id="form1" action="{% url 'parse_header_pg' img_index %}" method="post" style="display: none;">
+	{% csrf_token %}
+	<input id="trim_input" type="text" name="y_trim_coord">
+</form>
+<button id="submit_btn" type="submit" form="form1" style="display: none;" value="Submit">Submit</button>
+
+</body>
+</html>
+
+

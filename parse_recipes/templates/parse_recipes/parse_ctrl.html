@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+	<style>
+		
+		.aligncenter {
+		    text-align: center;
+		}
+        
+        .center-fit {
+        	max-width: 50%;
+            max-height: 100vh;
+        }
+
+        #myCanvas {
+        	border: 1px solid #4287f5;
+        }
+
+	 </style>
+
+
+	<title>Parse Control</title>
+</head>
+
+<body style="background-color:#ede0ca;">
+<h2 class="aligncenter">Parse Control</h2>
+<br>
+<h3 class="aligncenter">Total original images: {{ total_images_len }}</h3>
+<br>
+
+<div style="display: flex;align-items:center;justify-content:center;">
+<form id="form11" action="{% url 'parse_ctrl_pg' %}" method="post">{% csrf_token %}</form>
+<button id="submit_btn" type="submit" form="form11" value="Refresh">Refresh</button>
+</div>
+<br><br>
+
+<table 
+	style="width:80%;text-align:center;border-collapse:collapse" 
+	border="1px solid black" 
+	align="center" 
+	bgcolor="#e0d5bc">
+<tr bgcolor="#d6c8a1">
+	<th>Task</th>
+	<th>Done</th>
+	<th>Missing</th>
+</tr>
+<tr>
+	<td><h4>Left edge <i><a href="{% url 'parse_left_pg' 0 %}" target="_blank">start</a></i></h4></td>
+	<td>{{ left_edge_done_len }}</td>
+	<td>{{ left_edge_missing_len }}</td>
+</tr>
+<tr>
+	<td><h4>Right edge <i><a href="{% url 'parse_right_pg' 0 %}" target="_blank">start</a></i></h4></td>
+	<td>{{ right_edge_done_len }}</td>
+	<td>{{ right_edge_missing_len }}</td>
+</tr>
+<tr>
+	<td><h4>Top edge <i><a href="{% url 'parse_top_pg' 0 %}" target="_blank">start</a></i></h4></td>
+	<td>{{ top_edge_done_len }}</td>
+	<td>{{ top_edge_missing_len }}</td>
+</tr>
+<tr>
+	<td><h4>Bottom edge <i><a href="{% url 'parse_bottom_pg' 0 %}" target="_blank">start</a></i></h4></td>
+	<td>{{ bottom_edge_done_len }}</td>
+	<td>{{ bottom_edge_missing_len }}</td>
+</tr>
+<tr>
+	<td><h4>Header <i><a href="{% url 'parse_header_pg' 0 %}" target="_blank">start</a></i></h4></td>
+	<td>{{ header_done_len }}</td>
+	<td>{{ header_missing_len }}</td>
+</tr>
+<tr>
+	<td><h4>Footer <i><a href="{% url 'parse_footer_pg' 0 %}" target="_blank">start</a></i></h4></td>
+	<td>{{ footer_done_len }}</td>
+	<td>{{ footer_missing_len }}</td>
+</tr>
+<tr>
+	<td><h4>Vertical split (2 coords) <i><a href="{% url 'split_vertical_pg' 0 %}" target="_blank">start</a></i></h4></td>
+	<td>{{ splt_vert_done_len }}</td>
+	<td>{{ splt_vert_missing_len }}</td>
+</tr>
+<tr>
+	<td><h4>Trim recipes <i><a href="{% url 'trim_recipes_pg' 0 %}" target="_blank">start</a></i></h4></td>
+	<td>{{ trim_recipes_done_len }}</td>
+	<td>{{ trim_recipes_missing_len }}</td>
+</tr>
+</table>
+
+<br>
+<h4 align="center">Run OCR all imgs <i><a href="{% url 'run_ocr_all_imgs_pg' %}" target="_blank">run</a></i></h4>
+<li align="center">{{ ocr_processed_imgs }} processed images</li>
+<li align="center">{{ ocr_processed_recipes }} processed recipes</li>
+
+<br><br><br>
+</body>
+</html>
+
+

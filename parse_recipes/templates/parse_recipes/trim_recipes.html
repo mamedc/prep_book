@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+	<style>
+		
+		.aligncenter {
+		    text-align: center;
+		}
+        
+        .center-fit {
+        	max-width: 50%;
+            max-height: 100vh;
+        }
+
+        #myCanvas {
+        	border: 1px solid #4287f5;
+        }
+
+	 </style>
+
+
+	<script type="text/javascript">
+
+		let click_counter = 0
+
+		window.onload = function(){
+
+			var canvas = document.getElementById('demo'),
+			    ctx = canvas.getContext('2d'),
+			    line = new Line(ctx),
+			    img = new Image;
+			
+			ctx.strokeStyle = '#eb4034'; ctx.lineWidth = 2;
+			
+			function Line(ctx) {
+			    var me = this;
+			    this.x1 = 0; this.x2 = 0; this.y1 = 0; this.y2 = 0;
+			    this.draw = function() {
+			        ctx.beginPath();
+			        ctx.moveTo(me.x1, me.y1);
+			        ctx.lineTo(me.x2, me.y2);
+			        ctx.stroke();
+			    }
+			}
+			
+			img.onload = start;
+			img.src = "{{ current_img_path }}";
+
+			function start() {
+			    ctx.drawImage(img, 0, 0, demo.width, demo.height);
+			    canvas.onmousemove = updateLine;
+			}
+
+			function updateLine(e) {
+			    var r = canvas.getBoundingClientRect(),
+			        x = e.clientX - r.left,
+			        y = e.clientY - r.top;
+			    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+			    line.x1 = 0;
+			    line.y1 = y;
+			    line.x2 = canvas.width;
+			    line.y2 = y;
+			    line.draw();
+			}
+
+			// Mouse click
+			var canvas = document.getElementById('demo');
+	        canvas.addEventListener('mousedown', getPosition, false);
+		}
+
+		function getPosition(event) {
+	    	var x = new Number();
+	        var y = new Number();
+	        var canvas = document.getElementById('demo');
+
+			x = event.x;
+	        y = event.y; 
+	        x -= canvas.offsetLeft;
+	        y -= canvas.offsetTop;
+
+	        // Send value to aux form and submit
+	        // Click #1
+	        if (click_counter == 0) {
+	        	document.getElementById('trim_input_0').value = y;
+				document.getElementById('click_counter_disp').innerHTML = "Trim recipes - 1 recipe";
+	        } else {
+	        	new_field = document.getElementById("form1").lastElementChild.cloneNode(true);
+	        	new_field.name = "y_trim_coord_" + click_counter;
+	        	new_field.id = "trim_input_" + click_counter;
+	        	new_field.value = y;
+				document.querySelector('#form1').appendChild(new_field);
+				document.getElementById('click_counter_disp').innerHTML = "Trim recipes - " + (click_counter+1) + " recipes";
+	        }
+	        
+	        click_counter++
+
+
+		}
+
+	</script>
+
+	<title>Trim recipes</title>
+</head>
+
+<body>
+<h2 id="click_counter_disp" class="aligncenter">Trim recipes</h2>
+<h3 class="aligncenter">Image {{ img_number }} of {{ img_list_len }} - {{ current_img_file }}</h3>
+
+<div class="aligncenter" >
+	<button id="submit_btn" type="submit" form="form1" value="Submit">Submit</button>
+</div>
+
+<p class="aligncenter"><canvas id="demo" width = "1000px" height="1333.333333px"></canvas></p>
+
+<br>
+<form id="form1" action="{% url 'trim_recipes_pg' img_index %}" method="post" style="display: none;">
+	{% csrf_token %}
+	<input id="trim_input_0" type="text" name="y_trim_coord_0">
+</form>
+
+</body>
+</html>
+
+

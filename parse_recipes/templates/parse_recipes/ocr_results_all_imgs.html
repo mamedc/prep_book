@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+	<style>
+		
+		.aligncenter {
+		    text-align: center;
+		}
+        
+        .center-fit {
+        	max-width: 50%;
+            max-height: 100vh;
+        }
+
+        #myCanvas {
+        	border: 1px solid #4287f5;
+        }
+
+	 </style>
+
+	<title>OCR all results</title>
+</head>
+
+<body>
+<h2 class="aligncenter">OCR all imgs results - Created folders</h2>
+
+
+
+
+
+{% for key, values in image_pg.items %}
+<p>
+	{{ key }} - {{ values }}
+</p>
+
+	
+
+{% endfor %}
+
+</body>
+</html>
+
+

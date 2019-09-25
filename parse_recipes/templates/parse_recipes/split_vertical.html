@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+	<style>
+		
+		.aligncenter {
+		    text-align: center;
+		}
+        
+        .center-fit {
+        	max-width: 50%;
+            max-height: 100vh;
+        }
+
+        #myCanvas {
+        	border: 1px solid #4287f5;
+        }
+
+	 </style>
+
+
+	<script type="text/javascript">
+
+		let click_counter = 0
+
+		window.onload = function(){
+
+			var canvas = document.getElementById('demo'),
+			    ctx = canvas.getContext('2d'),
+			    line = new Line(ctx),
+			    img = new Image;
+			
+			ctx.strokeStyle = '#eb4034'; ctx.lineWidth = 2;
+			
+			function Line(ctx) {
+			    var me = this;
+			    this.x1 = 0; this.x2 = 0; this.y1 = 0; this.y2 = 0;
+			    this.draw = function() {
+			        ctx.beginPath();
+			        ctx.moveTo(me.x1, me.y1);
+			        ctx.lineTo(me.x2, me.y2);
+			        ctx.stroke();
+			    }
+			}
+			
+			img.onload = start;
+			img.src = "{{ current_img_path }}";
+
+			function start() {
+			    ctx.drawImage(img, 0, 0, demo.width, demo.height);
+			    canvas.onmousemove = updateLine;
+			}
+
+			function updateLine(e) {
+			    var r = canvas.getBoundingClientRect(),
+			        x = e.clientX - r.left,
+			        y = e.clientY - r.top;
+			    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+			    line.x1 = x;
+			    line.y1 = 0;
+			    line.x2 = x;
+			    line.y2 = canvas.height;
+			    line.draw();
+			}
+
+			// Mouse click
+			var canvas = document.getElementById('demo');
+	        canvas.addEventListener('mousedown', getPosition, false);
+		}
+
+		function getPosition(event) {
+	    	var x = new Number();
+	        var y = new Number();
+	        var canvas = document.getElementById('demo');
+
+			x = event.x;
+	        y = event.y; 
+	        x -= canvas.offsetLeft;
+	        y -= canvas.offsetTop;
+
+	        // Send value to aux form and submit
+	        // Click #1
+	        if (click_counter == 0) {
+	        	document.getElementById('split_input_1').value = x;
+				document.getElementById('click_counter_disp').innerHTML = "Split vertical - click 1 of 2";
+	        }
+	        // Click #2
+	        if (click_counter == 1) {
+	        	document.getElementById('split_input_2').value = x;
+	        	document.getElementById('click_counter_disp').innerHTML = "Split vertical - indicate recipe side";
+	        }
+			// Click #3: Recipe side
+	        if (click_counter == 2) {
+	        	if (x <= document.getElementById('split_input_1').value) {
+	        		document.getElementById('split_input_3').value = 'left';
+	        	} else {
+	        		document.getElementById('split_input_3').value = 'right';
+	        	}
+	        	document.getElementById('submit_btn').click(); 
+	        }
+
+
+	        click_counter++
+		}
+
+	</script>
+
+	<title>Split vertical</title>
+</head>
+
+<body>
+<h2 id="click_counter_disp" class="aligncenter">Split vertical - two clicks</h2>
+<h3 class="aligncenter">Image {{ img_number }} of {{ img_list_len }} - {{ current_img_file }}</h3>
+<p class="aligncenter"><canvas id="demo" width = "1000px" height="1333.333333px"></canvas></p>
+
+<br>
+<form id="form1" action="{% url 'split_vertical_pg' img_index %}" method="post" style="display: none;">
+	{% csrf_token %}
+	<input id="split_input_1" type="text" name="x_split_coord_1">
+	<input id="split_input_2" type="text" name="x_split_coord_2">
+	<input id="split_input_3" type="text" name="rec_side">
+</form>
+<button id="submit_btn" type="submit" form="form1" style="display: none;" value="Submit">Submit</button>
+
+</body>
+</html>
+
+
