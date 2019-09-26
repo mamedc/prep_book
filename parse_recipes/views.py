@@ -18,6 +18,7 @@ static_path = SITE_ROOT + '\\static\\parse_recipes\\'
 
 img_disp_width, img_disp_height = 1000, 1333.333333
 
+
 def get_img_list(img_files_path):
 	SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 	img_list = next(os.walk(os.path.join(SITE_ROOT, img_files_path)))[2][:5]
@@ -49,6 +50,9 @@ def open_update_save_dict(static_path, img_list, img_index, trim_dict_):
 		# Save
 		with open(static_path + 'trim_dict.pkl', 'wb') as f:
 			pickle.dump(trim_dict, f, pickle.HIGHEST_PROTOCOL)
+
+
+
 
 
 def parse_ctrl(request):
@@ -181,7 +185,7 @@ def parse_ctrl(request):
 		rec_folder = SITE_ROOT + '\\' + processed_files_path
 		ocr_flds = os.listdir(rec_folder)
 
-		n_pages = len(list(set([x.split('#')[0][:-1] for x in ocr_flds])))
+		n_pages = len(list(set([x.split('rec')[0][:-1] for x in ocr_flds])))
 		n_recipes = len(os.listdir(rec_folder))
 
 	context = {
@@ -767,6 +771,23 @@ def trim_recipes(request, img_index):
 
 
 
+
+def ocr_on_header(header_img):
+
+	# Apply OCR
+	gray = cv2.cvtColor(header_img, cv2.COLOR_BGR2GRAY)
+	gray = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
+	#gray = cv2.medianBlur(gray, 3)
+	temp_img = SITE_ROOT + '\\' + img_files_path + '\\' + 'temp_img.jpg'
+	cv2.imwrite(temp_img, gray)
+	text = pytesseract.image_to_string(Image.open(temp_img))
+
+	with open(temp_img, 'rb') as f: page_img = f.read()   
+	os.remove(temp_img)
+    
+	return text
+
+
 def ocr_on_pg_number(footer_img):
 
 	# Apply OCR
@@ -809,7 +830,8 @@ def ocr_on_procedure(proc_img):
 	procedure = ' '.join(' '.join(procedure).split())
 	procedure = procedure.split('.')
 	procedure = [x.lstrip() for x in procedure]
-
+	procedure = '.\n\n'.join(procedure)
+	
 	return recipe_name, procedure
 
 
@@ -871,6 +893,7 @@ def run_ocr_on_img(img_index):
 
 		# Header and footer imgs
 		header_img = img[top_edge : header, left_edge : right_edge]
+		header_txt = ocr_on_pg_number(header_img)
 		footer_img = img[footer : bottom_edge, left_edge : right_edge]
 		footer_txt = ocr_on_pg_number(footer_img)
 
@@ -879,7 +902,7 @@ def run_ocr_on_img(img_index):
 		for i in range(len(recipe_cuts)-1):
 
 			# Create folder to keep processed files
-			rec_folder = SITE_ROOT + '\\' + processed_files_path + '\\' + img_list[img_index].split('.')[0] + '_#' + str(i)
+			rec_folder = SITE_ROOT + '\\' + processed_files_path + '\\' + img_list[img_index].split('.')[0] + '_rec' + str(i)
 			output_flds.append(rec_folder)
 			if not os.path.exists(rec_folder):
 				os.mkdir(rec_folder)
@@ -907,6 +930,7 @@ def run_ocr_on_img(img_index):
 			cv2.imwrite(rec_folder + '\\' + 'proc_img.jpg', proc_img)
 			cv2.imwrite(rec_folder + '\\' + 'ingr_img.jpg', ingr_img)
 			txt_results = {
+				'header_txt': header_txt,
 				'footer_txt': footer_txt,
 				'recipe_name': recipe_name,
 				'proc_txt': proc_txt,
@@ -934,24 +958,27 @@ def run_ocr_all_imgs(request):
 
 def inspect_recipe(request, recipe_fld):
 
-	recipe_fld = 'IMG_4405_#1'
-
-
-	#processed_files_path = 'static\\parse_recipes\\01_processed_recipes'
-
-
-	# Load files
-	#rec_folder = SITE_ROOT + '\\' + processed_files_path + '\\' + recipe_fld + '\\'
-	#header_img = rec_folder + 'header_img.jpg'
+	# Define static path for view.py and html template
+	proc_path_html = 'parse_recipes/01_processed_recipes/' + recipe_fld
+	proc_path_py = 'static\\parse_recipes\\01_processed_recipes\\' + recipe_fld
 	
-	path_list = ['C:', 'Users', 'MC', 'Python4DS', 'prep_book_django', 'parse_app', 'parse_recipes', 'static', 'parse_recipes', '01_processed_recipes', 'IMG_4405_#1', 'header_img.jpg']
+	# Load imgs
+	header_img = proc_path_html + '/header_img.jpg'
+	footer_img = proc_path_html + '/footer_img.jpg'
+	proc_img = proc_path_html + '/proc_img.jpg'
+	ingr_img = proc_path_html + '/ingr_img.jpg'
 
-	header_img = '/'.join(path_list)
-
+	# Load processed txt dict
+	with open(SITE_ROOT + '\\' + proc_path_py + '\\' + 'ocr_dict.pkl', 'rb') as f: 
+		ocr_dict = pickle.load(f)
 
 	context = {
 		'recipe_id': recipe_fld,
 		'header_img': header_img,
+		'footer_img': footer_img,
+		'proc_img': proc_img,
+		'ingr_img': ingr_img,
+		'ocr_dict': ocr_dict,
 	}
-
+	
 	return render(request, 'parse_recipes/inspect_recipe.html', context)

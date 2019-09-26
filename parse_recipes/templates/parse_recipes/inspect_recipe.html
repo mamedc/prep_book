@@ -3,19 +3,66 @@
 <head>
 
 	<style>
+
+		body {
+			background-color: #ede0ca;
+		}
 		
 		.aligncenter {
 		    text-align: center;
 		}
-        
-        .center-fit {
-        	max-width: 50%;
-            max-height: 100vh;
-        }
 
-        #myCanvas {
-        	border: 1px solid #4287f5;
-        }
+		.div1 {
+			text-align: center;
+			border: 1px solid black;
+			padding: 25px 0px 25px 0px;"
+		}
+
+        .input1 {
+        	height: 40px;
+ 			width: 465px;
+ 			padding:0 15px;
+		}
+
+
+		.row {	
+			display: flex;
+			padding: 25px 0px 25px 0px;
+			border: 1px solid red;
+		}
+
+		.first-column {
+		    flex: 0 0 350px;
+		    float: left;
+		    border: 1px solid green;
+		}
+
+		.second-column {
+		    flex: 1 1 350px;
+		    float: right;
+		    border: 1px solid cyan;
+		    padding: 0px 0px 0px 10px;
+		}
+
+        .input2 {
+        	width: 97%;
+        	height: 30px;
+        	padding: 0px 0px 0px 10px;
+		}
+
+		label, .input2 {
+		    display: block;
+		}
+
+		label {
+		    margin-bottom: 10px;
+		}
+
+		textarea {
+        	width: 97%;
+        	height: 600px;
+        	padding: 10px 0px 0px 10px;
+		}
 
 	 </style>
 
@@ -81,10 +128,9 @@
 	        document.getElementById('trim_input').value = x;
 	        document.getElementById('submit_btn').click(); 
 		}
-
 	</script>
 
-	<title>Left edge</title>
+	<title>Inspect Recipe</title>
 </head>
 
 <body>
@@ -93,14 +139,56 @@
 
 <h2 class="aligncenter">Inspect recipe - {{ recipe_id }}</h2>
 
+<!-- Header -->
+<div class="div1">	
+	<img src="{% static header_img %}" width=500 border="1"><br>
+	
+	<form id="header_form" method="post">
+		{% csrf_token %}
+		<input class="input1" id="header_txt" type="text" name="header_txt" value="{{ ocr_dict.header_txt }}">
+	</form>
+</div>
+
+<!-- Footer (pg number) -->
+<div class="div1">	
+	<img src="{% static footer_img %}" width=500 border="1"><br>
+	
+	<form id="header_form" method="post">
+		{% csrf_token %}
+		<input class="input1" id="proc_input_0" type="text" name="footer_txt" value="{{ ocr_dict.footer_txt }}">
+	</form>
+</div>
+
+<!-- Recipe name and procedure -->
+<div class="row">	
+	<div class="first-column">
+		<img src="{% static proc_img %}" width=350 border="1">
+	</div>
+
+	<div class="second-column">
+		<form id="header_form" method="post">
+			{% csrf_token %}
+			<label>Recipe name:
+				<input class="input2" type="text" name="recipe_name" value="{{ ocr_dict.recipe_name }}">
+			</label>
+			<label>Procedure:
+				<textarea name="textarea">{{ ocr_dict.proc_txt }}</textarea>
+			</label>
+		</form>
+	</div>
+</div>
 
 
 
-<p>"{% static '01_processed_recipes/IMG_4405_#1/header_img.jpg' %}"</p>
-<img 
-	src="{% static 'parse_recipes/01_processed_recipes/IMG_4405_#1/header_img.jpg' %}" 
-	alt="My image"
-	width=80%>
+
+
+
+
+<br><br>
+<img src="{% static ingr_img %}" width=350 border="1">
+
+
+<!--button id="submit_btn" type="submit" form="form1" style="display: none;" value="Submit">Submit</button-->
 
 
 </body>
