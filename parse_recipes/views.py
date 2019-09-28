@@ -855,7 +855,17 @@ def ocr_on_ingredients(ingr_img):
 		if len(tx) > 0:
 			text_out.append(tx)
     
-	return text_out
+	# Recipe name italian
+	rec_name_ita = text_out[0].lower()
+	
+	# Recipe yield
+	rec_yield = text_out[1]
+	rec_yield = rec_yield.replace('Serves ', '')
+	
+	# Ingredients
+	ingr_txt = text_out[2:]
+
+	return rec_name_ita, rec_yield, ingr_txt
 
 
 def run_ocr_on_img(img_index):
@@ -922,7 +932,7 @@ def run_ocr_on_img(img_index):
 
 			# Run OCR
 			recipe_name, proc_txt = ocr_on_procedure(proc_img)
-			ingr_txt = ocr_on_ingredients(ingr_img)
+			rec_name_ita, rec_yield, ingr_txt = ocr_on_ingredients(ingr_img)
 
 			# Store results
 			cv2.imwrite(rec_folder + '\\' + 'header_img.jpg', header_img)
@@ -934,6 +944,8 @@ def run_ocr_on_img(img_index):
 				'footer_txt': footer_txt,
 				'recipe_name': recipe_name,
 				'proc_txt': proc_txt,
+				'rec_name_ita': rec_name_ita,
+				'rec_yield': rec_yield,
 				'ingr_txt': ingr_txt,
 			}
 			with open(rec_folder + '\\' + 'ocr_dict.pkl', 'wb') as f:
@@ -954,6 +966,126 @@ def run_ocr_all_imgs(request):
 		context['image_pg'].update({img_file: output_flds})
 
 	return render(request, 'parse_recipes/ocr_results_all_imgs.html', context)
+
+
+
+def look_at_index(text, index_list, gram_size):
+
+	text = text.replace(',', '').replace('.', '')
+    
+    # 1) Compute n-grams from 'text'
+	unigram_items = text.split()
+	
+	if gram_size == 1:
+		n_gram_items = unigram_items
+	elif gram_size == 2:
+		n_gram_items = [i + ' ' + j for i,j in zip(unigram_items[::1], unigram_items[1::1])]
+	elif gram_size == 3:
+		n_gram_items = [i+' '+j+' '+k for i,j,k in zip(unigram_items[::1], unigram_items[1::1], unigram_items[2::])]
+	elif gram_size == 4:
+		n_gram_items = [i+' '+j+' '+k+' '+l for i,j,k,l in zip(unigram_items[::1], unigram_items[1::1], unigram_items[2::], unigram_items[3::])]
+
+
+    # 2) Plural to singular words
+	plural_flag = [False] * len(n_gram_items)
+	for i, n_gram in enumerate(n_gram_items):
+		if n_gram[-1] == 's':
+			n_gram_items[i] = n_gram[:-1]
+			plural_flag[i] = True
+
+	# 3) Search for n_gram at 'index_list'
+	found_item = [n_gram for n_gram in n_gram_items if n_gram in index_list]
+    
+    # 4) remove from 'text' founded n_gram
+	if len(found_item) > 0:
+		found_item = found_item[0]
+		found_index = n_gram_items.index(found_item)
+		if plural_flag[found_index]:
+			found_item += 's'
+		out_text = text.replace(found_item, '').strip()
+	else:
+		found_item = ''
+		out_text = text
+    
+	if len(found_item) > 0:
+		if plural_flag[found_index]:
+			found_item = found_item[:-1]
+	
+	return out_text, found_item
+
+
+
+def search_amount(text):
+    
+	'''
+	Input: text, readed ingredient line from ingredients image (w/ no recipe name and yield)
+	Output: amount, int
+    
+	''' 
+	text = text.replace(',', '').replace('.', '')
+    
+    # Ingredient with fraction amount
+	if '/' in text:
+		i = text.index('/')
+        
+        # Fraction amount (no integer part)
+		if i == 0:
+			pos_char = text[i+1]
+			fraction_amt_str = '1/' + pos_char
+            
+		if i > 0:
+			prev_char = text[i-1]
+			pos_char = text[i+1]
+			if prev_char == "'": 
+				prev_char = '1'
+				text = text.replace("'", '1')
+			fraction_amt_str = prev_char + '/' + pos_char
+            
+        # Integer part: one previous position
+		if i > 1:
+			if text[i-2].isdigit(): 
+				integer_amt_str_1 = text[i-2]
+			else:
+				integer_amt_str_1 = ''
+		else:
+			integer_amt_str_1 = ''
+        
+        # Integer part: two previous position
+		if i > 2:
+			if text[i-3].isdigit(): 
+				integer_amt_str_2 = text[i-3]   
+			else:
+				integer_amt_str_2 = ''
+		else:
+			integer_amt_str_2 = ''
+            
+        # Introduce space if 'integer_amt_str_1' exists
+		if len(integer_amt_str_1) > 0:
+			text = text[:i-2+1] + ' ' + text[i-2+1:]
+            
+		amount_string = integer_amt_str_2 + integer_amt_str_1 + ' ' + fraction_amt_str
+		amount_string = amount_string.lstrip()
+    
+    # Ingredient with only integer amount
+	else:
+		amount_string = ''
+		last_found_digit = None
+		for n, s in enumerate(text):
+			if s.isdigit():
+				amount_string += s
+				last_found_digit = n
+			elif (not s.isdigit()) & (last_found_digit == None):
+				pass
+			else:
+				break
+   
+    # Output
+	if amount_string == '':
+		return {'text_strp': text, 'amount_string': None}
+	else:
+		out_text = text.replace(amount_string, '').strip()
+		return {'text_strp': out_text, 'amount_string': amount_string}
+
 
 
 def inspect_recipe(request, recipe_fld):
@@ -980,5 +1112,45 @@ def inspect_recipe(request, recipe_fld):
 		'ingr_img': ingr_img,
 		'ocr_dict': ocr_dict,
 	}
+
+	context['ingrs_strpd'] = []
 	
+	# Load index_dict
+	with open(SITE_ROOT + '\\static\\parse_recipes\\index_dict.pkl', 'rb') as f: 
+		index_dict =  pickle.load(f)
+
+	# For each ingredient item:
+	for ingr_item in context['ocr_dict']['ingr_txt']:
+
+
+		# Search amount
+		d_amt = search_amount(ingr_item)
+		ingr_item_strpd, amount_str = d_amt['text_strp'], d_amt['amount_string']
+
+
+		# Search n_grams at 'ingredients'
+		ingr_item_strpd = ingr_item
+		index_list = index_dict['ingredients']
+		for n_gram in reversed(range(1, 5)): # n_gramsn from 4 to 1
+			ingr_item_strpd, found_item = look_at_index(ingr_item, index_list, n_gram)
+			if len(found_item) > 0: break
+
+		# Update context
+		context['ingrs_strpd'].append({'amount_string': amount_str, 'found_item': found_item, 'ingr_item_strpd': ingr_item_strpd})
+
+	
+		# Update index dict
+		#index_dict['ingredients'] = index_list
+
+	# Save index dict
+	#with open(SITE_ROOT + '\\static\\parse_recipes\\index_dict.pkl', 'wb') as f: 
+		#pickle.dump(index_dict, f, pickle.HIGHEST_PROTOCOL)
+
+
+
+		
+		#, , base_recipes, mises_en_plis, units and qualities
+
+
+
 	return render(request, 'parse_recipes/inspect_recipe.html', context)

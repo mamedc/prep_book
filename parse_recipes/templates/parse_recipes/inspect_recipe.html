@@ -60,8 +60,12 @@
 
 		textarea {
         	width: 97%;
-        	height: 600px;
+        	height: 400px;
         	padding: 10px 0px 0px 10px;
+		}
+
+		.form-inline {
+			display: table;
 		}
 
 	 </style>
@@ -182,10 +186,43 @@
 
 
 
+<!-- Recipe name and procedure -->
+<div class="row">	
+	<div class="first-column">
+		<img src="{% static ingr_img %}" width=350 border="1">
+	</div>
+
+	<div class="second-column">
+		<form id="header_form" method="post">
+			{% csrf_token %}
+			
+			<label>Recipe name italian:
+				<input class="input2" type="text" name="recipe_name" value="{{ ocr_dict.rec_name_ita }}">
+			</label>
+			<label>Yield:
+				<input class="input2" type="text" name="recipe_name" value="{{ ocr_dict.rec_yield }}">
+			</label>
+			
+
+			<label>Ingredients:
+				{% for i in ingrs_strpd %}
+					<div class="form-inline">
+						<input type="text" name="ingr_" value="{{ i.amount_string }}">
+						<input type="text" name="ingr_" value="{{ i.found_item }}">
+						<input type="text" name="ingr_" value="{{ i.ingr_item_strpd }}">			
+					</div>
+				{% endfor %}
+			</label>
 
 
-<br><br>
-<img src="{% static ingr_img %}" width=350 border="1">
+		</form>
+	</div>
+</div>
+
+
+
+
+
 
 
 <!--button id="submit_btn" type="submit" form="form1" style="display: none;" value="Submit">Submit</button-->
