@@ -68,70 +68,88 @@
 			display: table;
 		}
 
+		#inpt_amt { width: 40px; height: 30px; padding: 0px 0px 0px 5px; }
+		#inpt_unit { width: 100px; height: 30px; padding: 0px 0px 0px 5px; }
+		#inpt_qlt {	width: 40px; height: 30px; padding: 0px 0px 0px 5px; }
+		#inpt_ingr { width: 100px; height: 30px; padding: 0px 0px 0px 5px; }
+		#inpt_msenp { width: 100px; height: 30px; padding: 0px 0px 0px 5px;	}
+		#inpt_strpd { width: 200px; height: 30px; padding: 0px 0px 0px 5px;	}
+
 	 </style>
+
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
 
 
 	<script type="text/javascript">
 
-		window.onload = function(){
-
-			var canvas = document.getElementById('demo'),
-			    ctx = canvas.getContext('2d'),
-			    line = new Line(ctx),
-			    img = new Image;
-			
-			ctx.strokeStyle = '#eb4034'; ctx.lineWidth = 2;
-			
-			function Line(ctx) {
-			    var me = this;
-			    this.x1 = 0; this.x2 = 0; this.y1 = 0; this.y2 = 0;
-			    this.draw = function() {
-			        ctx.beginPath();
-			        ctx.moveTo(me.x1, me.y1);
-			        ctx.lineTo(me.x2, me.y2);
-			        ctx.stroke();
+		function getCookie(name) {
+			var cookieValue = null;
+			if (document.cookie && document.cookie != '') {
+			    var cookies = document.cookie.split(';');
+			    for (var i = 0; i < cookies.length; i++) {
+			        var cookie = jQuery.trim(cookies[i]);
+			        // Does this cookie string begin with the name we want?
+			        if (cookie.substring(0, name.length + 1) == (name + '=')) {
+			            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+			            break;
+			        }
 			    }
 			}
+			return cookieValue;
+		}
 			
-			img.onload = start;
-			img.src = "{{ current_img_path }}";
+		var csrftoken = getCookie('csrftoken');
+		console.log(csrftoken);
 
-			function start() {
-			    ctx.drawImage(img, 0, 0, demo.width, demo.height);
-			    canvas.onmousemove = updateLine;
-			}
-
-			function updateLine(e) {
-			    var r = canvas.getBoundingClientRect(),
-			        x = e.clientX - r.left,
-			        y = e.clientY - r.top;
-			    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-			    line.x1 = x;
-			    line.y1 = 0;
-			    line.x2 = x;
-			    line.y2 = canvas.height;
-			    line.draw();
-			}
-
-			// Mouse click
-			var canvas = document.getElementById('demo');
-	        canvas.addEventListener('mousedown', getPosition, false);
+		//Ajax call
+		function csrfSafeMethod(method) {
+			// these HTTP methods do not require CSRF protection
+			return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
 		}
+		
+		$.ajaxSetup({
+		    crossDomain: false, // obviates need for sameOrigin test
+		    beforeSend: function(xhr, settings) {
+		        if (!csrfSafeMethod(settings.type)) {
+		            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+		        }
+		    }
+		});
 
-		function getPosition(event) {
-	    	var x = new Number();
-	        var y = new Number();
-	        var canvas = document.getElementById('demo');
 
-			x = event.x;
-	        y = event.y; 
-	        x -= canvas.offsetLeft;
-	        y -= canvas.offsetTop;
 
-	        // Send value to aux form and submit
-	        document.getElementById('trim_input').value = x;
-	        document.getElementById('submit_btn').click(); 
-		}
+
+
+        $(document).ready(function() {
+
+			$("#SubmitForm").submit(function(e) {
+
+				dict = {
+					header_txt: document.getElementById('header_txt').value,
+					pg_number: document.getElementById('pg_number').value,
+				};
+
+				console.log(dict)
+				
+				// prevent from normal form behaviour
+		      	e.preventDefault();
+		    	
+		    	// serialize the form data  
+		      	//var serializedData = $(this).serialize();
+		      	
+		      	$.ajax({
+		      		type: 'POST',
+		      		url:  "{% url 'inspect_recipe_pg' 'IMG_4405_rec0' %}",
+		      		data: dict,
+		      		success: function(response) { console.log(response) },
+		      		error: function(response) { console.log(response) }
+		      	});
+			});
+		});
+
 	</script>
 
 	<title>Inspect Recipe</title>
@@ -157,9 +175,9 @@
 <div class="div1">	
 	<img src="{% static footer_img %}" width=500 border="1"><br>
 	
-	<form id="header_form" method="post">
+	<form id="footer_form" method="post">
 		{% csrf_token %}
-		<input class="input1" id="proc_input_0" type="text" name="footer_txt" value="{{ ocr_dict.footer_txt }}">
+		<input class="input1" id="pg_number" type="text" name="footer_txt" value="{{ ocr_dict.footer_txt }}">
 	</form>
 </div>
 
@@ -170,7 +188,7 @@
 	</div>
 
 	<div class="second-column">
-		<form id="header_form" method="post">
+		<form id="rec_form" method="post">
 			{% csrf_token %}
 			<label>Recipe name:
 				<input class="input2" type="text" name="recipe_name" value="{{ ocr_dict.recipe_name }}">
@@ -186,30 +204,33 @@
 
 
 
-<!-- Recipe name and procedure -->
+<!-- Ingredients -->
 <div class="row">	
 	<div class="first-column">
 		<img src="{% static ingr_img %}" width=350 border="1">
 	</div>
 
 	<div class="second-column">
-		<form id="header_form" method="post">
+		<form id="ingrs_form" method="post">
 			{% csrf_token %}
 			
 			<label>Recipe name italian:
 				<input class="input2" type="text" name="recipe_name" value="{{ ocr_dict.rec_name_ita }}">
 			</label>
+
 			<label>Yield:
 				<input class="input2" type="text" name="recipe_name" value="{{ ocr_dict.rec_yield }}">
 			</label>
 			
-
-			<label>Ingredients:
+			<label>Amount:    Ingredient:
 				{% for i in ingrs_strpd %}
 					<div class="form-inline">
-						<input type="text" name="ingr_" value="{{ i.amount_string }}">
-						<input type="text" name="ingr_" value="{{ i.found_item }}">
-						<input type="text" name="ingr_" value="{{ i.ingr_item_strpd }}">			
+						<input id="inpt_amt" type="text" name="ingr_" value="{{ i.amount_string }}">
+						<input id="inpt_unit"  type="text" name="ingr_" value="{{ i.found_unit }}">
+						<input id="inpt_qlt"  type="text" name="ingr_" value="{{ i.found_quality }}">
+						<input id="inpt_ingr"  type="text" name="ingr_" value="{{ i.found_item }}">
+						<input id="inpt_msenp"  type="text" name="ingr_" value="{{ i.found_msenp }}">
+						<input id="inpt_strpd"  type="text" name="ingr_" value="{{ i.ingr_item_strpd }}">			
 					</div>
 				{% endfor %}
 			</label>
@@ -218,6 +239,16 @@
 		</form>
 	</div>
 </div>
+
+
+
+<div class="row">
+	<form id="SubmitForm" method="post">
+		{% csrf_token %}
+		<input type="submit" name="inp-submit" />
+	</form>
+</div>
+
 
 
 

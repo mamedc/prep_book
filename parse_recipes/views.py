@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse
+from django.http import JsonResponse
 import os
 import pickle
 import cv2
@@ -15,6 +16,7 @@ SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 img_files_path = 'static\\\\parse_recipes\\\\00_original_book_pics'
 processed_files_path = 'static\\\\parse_recipes\\\\01_processed_recipes'
 static_path = SITE_ROOT + '\\static\\parse_recipes\\'
+
 
 img_disp_width, img_disp_height = 1000, 1333.333333
 
@@ -969,6 +971,8 @@ def run_ocr_all_imgs(request):
 
 
 
+
+
 def look_at_index(text, index_list, gram_size):
 
 	text = text.replace(',', '').replace('.', '')
@@ -1012,7 +1016,6 @@ def look_at_index(text, index_list, gram_size):
 			found_item = found_item[:-1]
 	
 	return out_text, found_item
-
 
 
 def search_amount(text):
@@ -1081,11 +1084,10 @@ def search_amount(text):
    
     # Output
 	if amount_string == '':
-		return {'text_strp': text, 'amount_string': None}
+		return {'text_strp': text, 'amount_string': amount_string}
 	else:
 		out_text = text.replace(amount_string, '').strip()
 		return {'text_strp': out_text, 'amount_string': amount_string}
-
 
 
 def inspect_recipe(request, recipe_fld):
@@ -1119,26 +1121,90 @@ def inspect_recipe(request, recipe_fld):
 	with open(SITE_ROOT + '\\static\\parse_recipes\\index_dict.pkl', 'rb') as f: 
 		index_dict =  pickle.load(f)
 
-	# For each ingredient item:
-	for ingr_item in context['ocr_dict']['ingr_txt']:
+	# POST
+	if request.method == 'POST' and request.is_ajax():
+
+		print('AJAX POST')
+
+		data = request.POST
+		return JsonResponse({"success":True}, status=200)
+		
+		#return JsonResponse({"success":False}, status=400)
 
 
-		# Search amount
-		d_amt = search_amount(ingr_item)
-		ingr_item_strpd, amount_str = d_amt['text_strp'], d_amt['amount_string']
+	# GET
+	else:
 
+		# For each ingredient item:
+		for ingr_item in context['ocr_dict']['ingr_txt']:
 
-		# Search n_grams at 'ingredients'
-		ingr_item_strpd = ingr_item
-		index_list = index_dict['ingredients']
-		for n_gram in reversed(range(1, 5)): # n_gramsn from 4 to 1
-			ingr_item_strpd, found_item = look_at_index(ingr_item, index_list, n_gram)
-			if len(found_item) > 0: break
+			# If ingr_item == 'salt'
+			if ingr_item == 'salt':
+				context['ingrs_strpd'].append({
+					'amount_string': '', 
+					'found_unit': '', 
+					'found_item': 'salt', 
+					'ingr_item_strpd': ''})
 
-		# Update context
-		context['ingrs_strpd'].append({'amount_string': amount_str, 'found_item': found_item, 'ingr_item_strpd': ingr_item_strpd})
+			# If ingr_item == 'salt and pepper'
+			elif ingr_item == 'salt and pepper':
+				context['ingrs_strpd'].append({
+					'amount_string': '', 
+					'found_unit': '', 
+					'found_item': 'salt and pepper', 
+					'ingr_item_strpd': ''})
 
-	
+			# If ingr_item == 'salt and white pepper'
+			elif ingr_item == 'salt and white pepper':
+				context['ingrs_strpd'].append({
+					'amount_string': '', 
+					'found_unit': '', 
+					'found_item': 'salt and white pepper', 
+					'ingr_item_strpd': ''})
+
+			else:
+				# Search amount
+				d_amt = search_amount(ingr_item)
+				ingr_item_strpd, amount_str = d_amt['text_strp'], d_amt['amount_string']
+
+				# Search n_grams at 'units'
+				index_list = index_dict['units']
+				for n_gram in reversed(range(1, 5)): # n_gramsn from 4 to 1
+					ingr_item_strpd, found_unit = look_at_index(ingr_item_strpd, index_list, n_gram)
+					if len(found_unit) > 0: break
+
+				# Search n_grams at 'qualities'
+				index_list = index_dict['qualities']
+				for n_gram in reversed(range(1, 5)): # n_gramsn from 4 to 1
+					ingr_item_strpd, found_quality = look_at_index(ingr_item_strpd, index_list, n_gram)
+					if len(found_quality) > 0: break
+
+				# Search n_grams at 'ingredients'
+				index_list = index_dict['ingredients']
+				for n_gram in reversed(range(1, 5)): # n_gramsn from 4 to 1
+					ingr_item_strpd, found_item = look_at_index(ingr_item_strpd, index_list, n_gram)
+					if len(found_item) > 0: break
+
+				# Search n_grams at 'mises_en_plis'
+				index_list = index_dict['mises_en_plis']
+				for n_gram in reversed(range(1, 5)): # n_gramsn from 4 to 1
+					ingr_item_strpd, found_msenp = look_at_index(ingr_item_strpd, index_list, n_gram)
+					if len(found_msenp) > 0: break
+
+				# Update context
+				context['ingrs_strpd'].append({
+					'amount_string': amount_str, 
+					'found_unit': found_unit, 
+					'found_quality': found_quality, 
+					'found_item': found_item, 
+					'found_msenp': found_msenp, 
+					'ingr_item_strpd': ingr_item_strpd})
+
+		return render(request, 'parse_recipes/inspect_recipe.html', context)
+
+		
+			
+
 		# Update index dict
 		#index_dict['ingredients'] = index_list
 
@@ -1153,4 +1219,4 @@ def inspect_recipe(request, recipe_fld):
 
 
 
-	return render(request, 'parse_recipes/inspect_recipe.html', context)
+	
