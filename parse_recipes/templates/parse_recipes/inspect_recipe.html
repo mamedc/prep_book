@@ -68,12 +68,6 @@
 			display: table;
 		}
 
-		#inpt_amt { width: 40px; height: 30px; padding: 0px 0px 0px 5px; }
-		#inpt_unit { width: 100px; height: 30px; padding: 0px 0px 0px 5px; }
-		#inpt_qlt {	width: 40px; height: 30px; padding: 0px 0px 0px 5px; }
-		#inpt_ingr { width: 100px; height: 30px; padding: 0px 0px 0px 5px; }
-		#inpt_msenp { width: 100px; height: 30px; padding: 0px 0px 0px 5px;	}
-		#inpt_strpd { width: 200px; height: 30px; padding: 0px 0px 0px 5px;	}
 
 	 </style>
 
@@ -82,9 +76,9 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
 
-
 	<script type="text/javascript">
 
+		// Ajax setup
 		function getCookie(name) {
 			var cookieValue = null;
 			if (document.cookie && document.cookie != '') {
@@ -109,7 +103,7 @@
 			// these HTTP methods do not require CSRF protection
 			return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
 		}
-		
+
 		$.ajaxSetup({
 		    crossDomain: false, // obviates need for sameOrigin test
 		    beforeSend: function(xhr, settings) {
@@ -122,7 +116,7 @@
 
 
 
-
+		// Ajax Post: All forms
         $(document).ready(function() {
 
 			$("#SubmitForm").submit(function(e) {
@@ -130,19 +124,77 @@
 				dict = {
 					header_txt: document.getElementById('header_txt').value,
 					pg_number: document.getElementById('pg_number').value,
+					recipe_name: document.getElementById('recipe_name').value,
+					procedure: document.getElementById('procedure').value,
+					recipe_name_italian: document.getElementById('recipe_name_italian').value,
+					yield: document.getElementById('yield').value,
+					ingrs: [],
+					brecs: [],
 				};
 
-				console.log(dict)
+				// Add ingredients to 'dict'
+				// Loop over each ingr set row
+				ingrs_set_chld = document.getElementById('ingrs_set').getElementsByTagName('div');
+				for (i = 0; i < ingrs_set_chld.length; i++) {
+					ingr_row = ingrs_set_chld[i];
+					
+					// Loop over each row field
+					ingrs_row_field = ingr_row.getElementsByTagName('input');
+					ingrs_row_vals = [];
+					for (j = 0; j < ingrs_row_field.length; j++) {	
+						ingrs_row_vals.push(ingrs_row_field[j].value);}
+					// Append to 'dict[ingrs]'
+					dict['ingrs'].push(ingrs_row_vals)}
+
+				// Add extra-ingredients to 'dict' (append to same dict['ingrs'] fiels)
+				// Loop over each extra ingr set row
+				extra_ingrs_set_chld = document.getElementById('extra_ingrs_set').getElementsByTagName('div');
+				for (i = 0; i < extra_ingrs_set_chld.length; i++) {
+					ingr_row = extra_ingrs_set_chld[i];
+					
+					// Loop over each row field
+					ingrs_row_field = ingr_row.getElementsByTagName('input');
+					ingrs_row_vals = [];
+					for (j = 0; j < ingrs_row_field.length; j++) {	
+						ingrs_row_vals.push(ingrs_row_field[j].value);}
+					// Append to 'dict[ingrs]'
+					dict['ingrs'].push(ingrs_row_vals)}
+
+				// Add base recipes to 'dict'
+				// Loop over each brec set row
+				brecs_set_chld = document.getElementById('brecs_set').getElementsByTagName('div');
+				for (i = 0; i < brecs_set_chld.length; i++) {
+					brec_row = brecs_set_chld[i];
+					
+					// Loop over each row field
+					brecs_row_field = brec_row.getElementsByTagName('input');
+					brecs_row_vals = [];
+					for (j = 0; j < brecs_row_field.length; j++) {	
+						brecs_row_vals.push(brecs_row_field[j].value);}
+					// Append to 'dict[brecs]'
+					dict['brecs'].push(brecs_row_vals)}
+
+				// Add extra base recipes to 'dict' (append to same dict['brecs'] fiels)
+				// Loop over each extra brec set row
+				extra_brecs_set_chld = document.getElementById('extra_brecs_set').getElementsByTagName('div');
+				for (i = 0; i < extra_brecs_set_chld.length; i++) {
+					brec_row = extra_brecs_set_chld[i];
+					
+					// Loop over each row field
+					brecs_row_field = brec_row.getElementsByTagName('input');
+					brecs_row_vals = [];
+					for (j = 0; j < brecs_row_field.length; j++) {	
+						brecs_row_vals.push(brecs_row_field[j].value);}
+					// Append to 'dict[brecs]'
+					dict['brecs'].push(brecs_row_vals)}
+
 				
 				// prevent from normal form behaviour
 		      	e.preventDefault();
-		    	
-		    	// serialize the form data  
-		      	//var serializedData = $(this).serialize();
-		      	
+		    			    	
 		      	$.ajax({
 		      		type: 'POST',
-		      		url:  "{% url 'inspect_recipe_pg' 'IMG_4405_rec0' %}",
+		      		url:  "{% url 'inspect_recipe_pg' '#' %}",
 		      		data: dict,
 		      		success: function(response) { console.log(response) },
 		      		error: function(response) { console.log(response) }
@@ -170,7 +222,6 @@
 		<input class="input1" id="header_txt" type="text" name="header_txt" value="{{ ocr_dict.header_txt }}">
 	</form>
 </div>
-
 <!-- Footer (pg number) -->
 <div class="div1">	
 	<img src="{% static footer_img %}" width=500 border="1"><br>
@@ -180,7 +231,6 @@
 		<input class="input1" id="pg_number" type="text" name="footer_txt" value="{{ ocr_dict.footer_txt }}">
 	</form>
 </div>
-
 <!-- Recipe name and procedure -->
 <div class="row">	
 	<div class="first-column">
@@ -191,50 +241,142 @@
 		<form id="rec_form" method="post">
 			{% csrf_token %}
 			<label>Recipe name:
-				<input class="input2" type="text" name="recipe_name" value="{{ ocr_dict.recipe_name }}">
+				<input id="recipe_name" class="input2" type="text" name="recipe_name" value="{{ ocr_dict.recipe_name }}">
 			</label>
 			<label>Procedure:
-				<textarea name="textarea">{{ ocr_dict.proc_txt }}</textarea>
+				<textarea id ="procedure" name="textarea">{{ ocr_dict.proc_txt }}</textarea>
 			</label>
 		</form>
 	</div>
 </div>
-
-
-
-
-
 <!-- Ingredients -->
 <div class="row">	
-	<div class="first-column">
-		<img src="{% static ingr_img %}" width=350 border="1">
-	</div>
+	<div class="first-column"><img src="{% static ingr_img %}" width=350 border="1"></div>
 
 	<div class="second-column">
 		<form id="ingrs_form" method="post">
 			{% csrf_token %}
+			<label>Recipe name italian:<input id="recipe_name_italian" class="input2" type="text" name="recipe_name_italian" value="{{ ocr_dict.rec_name_ita }}"></label>
+			<label>Yield:<input id="yield" class="input2" type="text" name="yield" value="{{ ocr_dict.rec_yield }}"></label>
 			
-			<label>Recipe name italian:
-				<input class="input2" type="text" name="recipe_name" value="{{ ocr_dict.rec_name_ita }}">
-			</label>
+			Ingredients:
+			<table>
+				<col width="50px" />
+				<col width="110px" />
+				<col width="50px" />
+				<col width="110px" />
+				<col width="110px" />
+				<col width="200px" />
+				<tr>
+					<td>am.</td>
+					<td>un.</td>
+					<td>qlt.</td>
+					<td>ingr.</td>
+					<td>msenp.</td>
+					<td>strpd.</td>
+				</tr>
+			</table>
 
-			<label>Yield:
-				<input class="input2" type="text" name="recipe_name" value="{{ ocr_dict.rec_yield }}">
-			</label>
+			<!-- Ingredients set -->
+			<div id = "ingrs_set">
+			{% for i in ingrs_strpd %}
+				{% if i.ingr_flag %}
+				<div id="ingrs_div" class="form-inline">
+					<input id="{{ i.amount_string_id }}" type="text" name="ingr_" value="{{ i.amount_string }}" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="{{ i.found_unit_id }}"  type="text" name="ingr_" value="{{ i.found_unit }}" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="{{ i.found_quality_id }}"  type="text" name="ingr_" value="{{ i.found_quality }}" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="{{ i.found_item_id }}"  type="text" name="ingr_" value="{{ i.found_item }}" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="{{ i.found_msenp_id }}"  type="text" name="ingr_" value="{{ i.found_msenp }}" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="{{ i.ingr_item_strpd_id }}"  type="text" name="ingr_" value="{{ i.ingr_item_strpd }}" style="width: 200px; height: 30px; padding: 0px 0px 0px 5px;">			
+				</div>
+				{% endif %}
+			{% endfor %}
+			</div>
+
+			<!-- Extra ingredient rows -->
+			<div id = "extra_ingrs_set">
+				<div id="ingrs_extra_div_1" class="form-inline">
+					<input id="inpt_amt_30" type="text" name="ingr_" value="" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="inpt_unit_30"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="inpt_qlt_30"  type="text" name="ingr_" value="" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="inpt_ingr_30"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="inpt_msenp_30"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="inpt_strpd_30"  type="text" name="ingr_" value="" style="width: 200px; height: 30px; padding: 0px 0px 0px 5px;">			
+				</div>
+
+				<div id="ingrs_extra_div_2" class="form-inline">
+					<input id="inpt_amt_30" type="text" name="ingr_" value="" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="inpt_unit_30"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="inpt_qlt_30"  type="text" name="ingr_" value="" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="inpt_ingr_30"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="inpt_msenp_30"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="inpt_strpd_30"  type="text" name="ingr_" value="" style="width: 200px; height: 30px; padding: 0px 0px 0px 5px;">			
+				</div>
+			</div>
+
+
+			<p></p>Base recipes:
+
+			<!-- Base recipes set -->
+			<div id = "brecs_set">
+			{% for i in ingrs_strpd %}
+				{% if i.ingr_flag == False %}
+				<div class="form-inline">
+					<input id="{{ i.amount_string_id }}" type="text" name="ingr_" value="{{ i.amount_string }}" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="{{ i.found_unit_id }}"  type="text" name="ingr_" value="{{ i.found_unit }}" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="{{ i.found_quality_id }}"  type="text" name="ingr_" value="{{ i.found_quality }}" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="{{ i.found_item_id }}"  type="text" name="ingr_" value="{{ i.found_item }}" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="{{ i.found_msenp_id }}"  type="text" name="ingr_" value="{{ i.found_msenp }}" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="{{ i.ingr_item_strpd_id }}"  type="text" name="ingr_" value="{{ i.ingr_item_strpd }}" style="width: 200px; height: 30px; padding: 0px 0px 0px 5px;">			
+				</div>
+				{% endif %}
+			{% endfor %}
+			</div>
+
+			<!-- Extra base recipe row -->
+			<div id = "extra_brecs_set">
+				<div id="brecs_extra_div_1" class="form-inline">
+					<input id="br_inpt_amt_30" type="text" name="ingr_" value="" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="br_inpt_unit_30"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="br_inpt_qlt_30"  type="text" name="ingr_" value="" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="br_inpt_ingr_30"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="br_inpt_msenp_30"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="br_inpt_strpd_30"  type="text" name="ingr_" value="" style="width: 200px; height: 30px; padding: 0px 0px 0px 5px;">			
+				</div>
+
+				<div id="brecs_extra_div_2" class="form-inline">
+					<input id="br_inpt_amt_30" type="text" name="ingr_" value="" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="br_inpt_unit_30"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="br_inpt_qlt_30"  type="text" name="ingr_" value="" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="br_inpt_ingr_30"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="br_inpt_msenp_30"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="br_inpt_strpd_30"  type="text" name="ingr_" value="" style="width: 200px; height: 30px; padding: 0px 0px 0px 5px;">			
+				</div>
+			</div>
+
 			
-			<label>Amount:    Ingredient:
-				{% for i in ingrs_strpd %}
-					<div class="form-inline">
-						<input id="inpt_amt" type="text" name="ingr_" value="{{ i.amount_string }}">
-						<input id="inpt_unit"  type="text" name="ingr_" value="{{ i.found_unit }}">
-						<input id="inpt_qlt"  type="text" name="ingr_" value="{{ i.found_quality }}">
-						<input id="inpt_ingr"  type="text" name="ingr_" value="{{ i.found_item }}">
-						<input id="inpt_msenp"  type="text" name="ingr_" value="{{ i.found_msenp }}">
-						<input id="inpt_strpd"  type="text" name="ingr_" value="{{ i.ingr_item_strpd }}">			
-					</div>
-				{% endfor %}
-			</label>
 
+			<p></p>
+			<label>
+				Seasoning:<br>
+					{% if salt_flag %}
+						<input id="salt_flag" type="checkbox" name="salt_flag" value="salt_flag" checked>salt<br>
+					{% else %}
+						<input id="salt_flag" type="checkbox" name="salt_flag" value="salt_flag">salt<br>
+					{% endif %}
+
+					{% if salt_and_pepper_flag %}
+						<input id="salt_and_pepper_flag" type="checkbox" name="salt_and_pepper_flag" value="salt_and_pepper_flag" checked>salt and pepper<br>
+					{% else %}
+						<input id="salt_and_pepper_flag" type="checkbox" name="salt_and_pepper_flag" value="salt_and_pepper_flag">salt and pepper<br>
+					{% endif %}
+
+					{% if salt_and_white_pepper_flag %}
+						<input id="salt_and_white_pepper_flag" type="checkbox" name="salt_and_white_pepper_flag" value="salt_and_white_pepper_flag" checked>salt and white pepper<br>
+					{% else %}
+						<input id="salt_and_white_pepper_flag" type="checkbox" name="salt_and_white_pepper_flag" value="salt_and_white_pepper_flag">salt and white pepper<br>
+					{% endif %}
+			</label>
 
 		</form>
 	</div>
@@ -242,10 +384,11 @@
 
 
 
+<!-- Submit btn -->
 <div class="row">
 	<form id="SubmitForm" method="post">
 		{% csrf_token %}
-		<input type="submit" name="inp-submit" />
+		<input type="submit" name="inp-submit"/>
 	</form>
 </div>
 
@@ -253,10 +396,6 @@
 
 
 
-
-
-
-<!--button id="submit_btn" type="submit" form="form1" style="display: none;" value="Submit">Submit</button-->
 
 
 </body>

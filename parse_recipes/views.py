@@ -975,7 +975,7 @@ def run_ocr_all_imgs(request):
 
 def look_at_index(text, index_list, gram_size):
 
-	text = text.replace(',', '').replace('.', '')
+	text = text.replace(',', '').replace('.', '').lower()
     
     # 1) Compute n-grams from 'text'
 	unigram_items = text.split()
@@ -1015,6 +1015,13 @@ def look_at_index(text, index_list, gram_size):
 		if plural_flag[found_index]:
 			found_item = found_item[:-1]
 	
+	
+	# Remove leading space
+	out_text = out_text.lstrip()
+
+	# Remove double space
+	out_text = re.sub(' +', ' ', out_text)
+
 	return out_text, found_item
 
 
@@ -1092,80 +1099,87 @@ def search_amount(text):
 
 def inspect_recipe(request, recipe_fld):
 
-	# Define static path for view.py and html template
-	proc_path_html = 'parse_recipes/01_processed_recipes/' + recipe_fld
-	proc_path_py = 'static\\parse_recipes\\01_processed_recipes\\' + recipe_fld
-	
-	# Load imgs
-	header_img = proc_path_html + '/header_img.jpg'
-	footer_img = proc_path_html + '/footer_img.jpg'
-	proc_img = proc_path_html + '/proc_img.jpg'
-	ingr_img = proc_path_html + '/ingr_img.jpg'
-
-	# Load processed txt dict
-	with open(SITE_ROOT + '\\' + proc_path_py + '\\' + 'ocr_dict.pkl', 'rb') as f: 
-		ocr_dict = pickle.load(f)
-
-	context = {
-		'recipe_id': recipe_fld,
-		'header_img': header_img,
-		'footer_img': footer_img,
-		'proc_img': proc_img,
-		'ingr_img': ingr_img,
-		'ocr_dict': ocr_dict,
-	}
-
-	context['ingrs_strpd'] = []
-	
-	# Load index_dict
-	with open(SITE_ROOT + '\\static\\parse_recipes\\index_dict.pkl', 'rb') as f: 
-		index_dict =  pickle.load(f)
-
-	# POST
+	# AJAX POST
 	if request.method == 'POST' and request.is_ajax():
-
-		print('AJAX POST')
+		
+		print('dddddddddddddddddddddddddd')
 
 		data = request.POST
-		return JsonResponse({"success":True}, status=200)
 		
-		#return JsonResponse({"success":False}, status=400)
+		assert False, data
 
+		return JsonResponse({"success":True}, status=200)
+		#return JsonResponse({"success":False}, status=400)
 
 	# GET
 	else:
 
+		# Define static path for view.py and html template
+		proc_path_html = 'parse_recipes/01_processed_recipes/' + recipe_fld
+		proc_path_py = 'static\\parse_recipes\\01_processed_recipes\\' + recipe_fld
+		
+		# Load imgs
+		header_img = proc_path_html + '/header_img.jpg'
+		footer_img = proc_path_html + '/footer_img.jpg'
+		proc_img = proc_path_html + '/proc_img.jpg'
+		ingr_img = proc_path_html + '/ingr_img.jpg'
+
+		# Load processed txt dict
+		with open(SITE_ROOT + '\\' + proc_path_py + '\\' + 'ocr_dict.pkl', 'rb') as f: 
+			ocr_dict = pickle.load(f)
+
+		context = {
+			'recipe_id': recipe_fld,
+			'header_img': header_img,
+			'footer_img': footer_img,
+			'proc_img': proc_img,
+			'ingr_img': ingr_img,
+			'ocr_dict': ocr_dict,
+			
+			'salt_flag': False,
+			'salt_and_pepper_flag': False,
+			'salt_and_white_pepper_flag': False,
+		}
+
+		context['ingrs_strpd'] = []
+			
+		# Load index_dict
+		with open(SITE_ROOT + '\\static\\parse_recipes\\index_dict.pkl', 'rb') as f: 
+			index_dict =  pickle.load(f)
+
 		# For each ingredient item:
+		ingr_n, brec_n = 0, 0
+		
 		for ingr_item in context['ocr_dict']['ingr_txt']:
+			
+			# Seasoning
 
 			# If ingr_item == 'salt'
-			if ingr_item == 'salt':
-				context['ingrs_strpd'].append({
-					'amount_string': '', 
-					'found_unit': '', 
-					'found_item': 'salt', 
-					'ingr_item_strpd': ''})
+			if ingr_item == 'salt': context['salt_flag'] = True
 
 			# If ingr_item == 'salt and pepper'
-			elif ingr_item == 'salt and pepper':
-				context['ingrs_strpd'].append({
-					'amount_string': '', 
-					'found_unit': '', 
-					'found_item': 'salt and pepper', 
-					'ingr_item_strpd': ''})
+			elif ingr_item == 'salt and pepper': context['salt_and_pepper_flag'] = True
 
 			# If ingr_item == 'salt and white pepper'
-			elif ingr_item == 'salt and white pepper':
-				context['ingrs_strpd'].append({
-					'amount_string': '', 
-					'found_unit': '', 
-					'found_item': 'salt and white pepper', 
-					'ingr_item_strpd': ''})
+			elif ingr_item == 'salt and white pepper': context['salt_and_white_pepper_flag'] = True
 
+
+			# Ingredient or base recipe
 			else:
+
+				ingr_flag = True # Ingredient, not base recipe
+
 				# Search amount
 				d_amt = search_amount(ingr_item)
 				ingr_item_strpd, amount_str = d_amt['text_strp'], d_amt['amount_string']
+
+				# Search n_grams at 'base_recipes'
+				index_list = index_dict['base_recipes']
+				for n_gram in reversed(range(1, 5)): # n_gramsn from 4 to 1
+					ingr_item_strpd, found_brec = look_at_index(ingr_item_strpd, index_list, n_gram)
+					if len(found_brec) > 0: 
+						ingr_flag = False
+						break
 
 				# Search n_grams at 'units'
 				index_list = index_dict['units']
@@ -1191,14 +1205,34 @@ def inspect_recipe(request, recipe_fld):
 					ingr_item_strpd, found_msenp = look_at_index(ingr_item_strpd, index_list, n_gram)
 					if len(found_msenp) > 0: break
 
+				
 				# Update context
-				context['ingrs_strpd'].append({
-					'amount_string': amount_str, 
-					'found_unit': found_unit, 
-					'found_quality': found_quality, 
-					'found_item': found_item, 
-					'found_msenp': found_msenp, 
-					'ingr_item_strpd': ingr_item_strpd})
+				if ingr_flag:
+					context['ingrs_strpd'].append({
+						'ingr_flag': ingr_flag, 
+						'amount_string_id': 'inpt_amt_' + str(ingr_n), 'amount_string': amount_str, 
+						'found_unit_id': 'inpt_unit_' + str(ingr_n),	'found_unit': found_unit, 
+						'found_quality_id': 'inpt_qlt_' + str(ingr_n), 'found_quality': found_quality, 
+						'found_item_id': 'inpt_ingr_' + str(ingr_n),	'found_item': found_item, 
+						'found_msenp_id': 'inpt_msenp_' + str(ingr_n), 'found_msenp': found_msenp, 
+						'ingr_item_strpd_id': 'inpt_strpd_' + str(ingr_n), 'ingr_item_strpd': ingr_item_strpd
+					})
+					ingr_n += 1
+					
+				else:
+					context['ingrs_strpd'].append({
+						'ingr_flag': ingr_flag, 
+						'amount_string_id': 'br_inpt_amt_' + str(brec_n), 'amount_string': amount_str, 
+						'found_unit_id': 'br_inpt_unit_' + str(brec_n),	'found_unit': found_unit, 
+						'found_quality_id': 'br_inpt_qlt_' + str(brec_n), 'found_quality': found_quality, 
+						'found_item_id': 'br_inpt_ingr_' + str(brec_n),	'found_item': found_brec, 
+						'found_msenp_id': 'br_inpt_msenp_' + str(brec_n), 'found_msenp': found_msenp, 
+						'ingr_item_strpd_id': 'br_inpt_strpd_' + str(brec_n), 'ingr_item_strpd': ingr_item_strpd
+					})
+					brec_n += 1
+		
+		
+		
 
 		return render(request, 'parse_recipes/inspect_recipe.html', context)
 
