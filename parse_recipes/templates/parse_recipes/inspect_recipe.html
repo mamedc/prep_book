@@ -113,7 +113,7 @@
 		    }
 		});
 
-
+		
 		// Ajax Post: All forms
         $(document).ready(function() {
 			$("#submit_btn").click(function(e) {
@@ -128,6 +128,9 @@
 					rec_yield: document.getElementById('yield').value,
 					ingrs: [],
 					brecs: [],
+					salt_flag: document.getElementById('salt_flag').checked,
+					pepper_flag: document.getElementById('pepper_flag').checked,
+					white_pepper_flag: document.getElementById('white_pepper_flag').checked,
 				};
 
 				// Add ingredients to 'dict'
@@ -140,7 +143,12 @@
 					ingrs_row_field = ingr_row.getElementsByTagName('input');
 					ingrs_row_vals = [];
 					for (j = 0; j < ingrs_row_field.length; j++) {	
-						ingrs_row_vals.push(ingrs_row_field[j].value);}
+						if (ingrs_row_field[j].type == "checkbox") {
+							ingrs_row_vals.push(ingrs_row_field[j].checked);
+						} else {
+							ingrs_row_vals.push(ingrs_row_field[j].value);
+						}
+					}
 					// Append to 'dict[ingrs]'
 					dict['ingrs'].push(ingrs_row_vals)}
 
@@ -154,7 +162,12 @@
 					ingrs_row_field = ingr_row.getElementsByTagName('input');
 					ingrs_row_vals = [];
 					for (j = 0; j < ingrs_row_field.length; j++) {	
-						ingrs_row_vals.push(ingrs_row_field[j].value);}
+						if (ingrs_row_field[j].type == "checkbox") {
+							ingrs_row_vals.push(ingrs_row_field[j].checked);
+						} else {
+							ingrs_row_vals.push(ingrs_row_field[j].value);
+						}
+					}
 					// Append to 'dict[ingrs]'
 					dict['ingrs'].push(ingrs_row_vals)}
 
@@ -168,7 +181,12 @@
 					brecs_row_field = brec_row.getElementsByTagName('input');
 					brecs_row_vals = [];
 					for (j = 0; j < brecs_row_field.length; j++) {	
-						brecs_row_vals.push(brecs_row_field[j].value);}
+						if (brecs_row_field[j].type == "checkbox") {
+							brecs_row_vals.push(brecs_row_field[j].checked);
+						} else {
+							brecs_row_vals.push(brecs_row_field[j].value);
+						}	
+					}
 					// Append to 'dict[brecs]'
 					dict['brecs'].push(brecs_row_vals)}
 
@@ -182,7 +200,12 @@
 					brecs_row_field = brec_row.getElementsByTagName('input');
 					brecs_row_vals = [];
 					for (j = 0; j < brecs_row_field.length; j++) {	
-						brecs_row_vals.push(brecs_row_field[j].value);}
+						if (brecs_row_field[j].type == "checkbox") {
+							brecs_row_vals.push(brecs_row_field[j].checked);
+						} else {
+							brecs_row_vals.push(brecs_row_field[j].value);
+						}
+					}
 					// Append to 'dict[brecs]'
 					dict['brecs'].push(brecs_row_vals)}
 
@@ -194,7 +217,9 @@
 		      		url:  "{% url 'ajax_request_pg' %}",
 		      		headers: {'X-Requested-With': 'XMLHttpRequest'},
 		      		data: dict,
-		      		success: function(response) { console.log('r0') },
+		      		success: function(response) { 
+		      			window.location.replace("{% url 'inspect_all_recipes_pg' %}"); 
+		      		},
 		      		error: function(response) { console.log('r1') }
 		      	});
 
@@ -259,23 +284,7 @@
 			<label>Recipe name italian:<input id="recipe_name_italian" class="input2" type="text" name="recipe_name_italian" value="{{ ocr_dict.rec_name_ita }}"></label>
 			<label>Yield:<input id="yield" class="input2" type="text" name="yield" value="{{ ocr_dict.rec_yield }}"></label>
 			
-			Ingredients:
-			<table>
-				<col width="50px" />
-				<col width="110px" />
-				<col width="50px" />
-				<col width="110px" />
-				<col width="110px" />
-				<col width="200px" />
-				<tr>
-					<td>am.</td>
-					<td>un.</td>
-					<td>qlt.</td>
-					<td>ingr.</td>
-					<td>msenp.</td>
-					<td>strpd.</td>
-				</tr>
-			</table>
+			Ingredients (am. / un. / qlt. / ingr. / msenp. / strpd. / opt.):
 
 			<!-- Ingredients set -->
 			<div id = "ingrs_set">
@@ -287,7 +296,12 @@
 					<input id="{{ i.found_quality_id }}"  type="text" name="ingr_" value="{{ i.found_quality }}" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
 					<input id="{{ i.found_item_id }}"  type="text" name="ingr_" value="{{ i.found_item }}" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
 					<input id="{{ i.found_msenp_id }}"  type="text" name="ingr_" value="{{ i.found_msenp }}" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
-					<input id="{{ i.ingr_item_strpd_id }}"  type="text" name="ingr_" value="{{ i.ingr_item_strpd }}" style="width: 200px; height: 30px; padding: 0px 0px 0px 5px;">			
+					<input id="{{ i.ingr_item_strpd_id }}"  type="text" name="ingr_" value="{{ i.ingr_item_strpd }}" style="width: 180px; height: 30px; padding: 0px 0px 0px 5px;">
+					{% if i.found_optional %}
+						<input id="{{ i.found_optional_id }}" type="checkbox" checked>
+					{% else %}
+						<input id="{{ i.found_optional_id }}" type="checkbox">
+					{% endif %}
 				</div>
 				{% endif %}
 			{% endfor %}
@@ -301,16 +315,18 @@
 					<input id="inpt_qlt_30"  type="text" name="ingr_" value="" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
 					<input id="inpt_ingr_30"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
 					<input id="inpt_msenp_30"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
-					<input id="inpt_strpd_30"  type="text" name="ingr_" value="" style="width: 200px; height: 30px; padding: 0px 0px 0px 5px;">			
+					<input id="inpt_strpd_30"  type="text" name="ingr_" value="" style="width: 180px; height: 30px; padding: 0px 0px 0px 5px;">			
+					<input id="inpt_optional_30" type="checkbox">
 				</div>
 
 				<div id="ingrs_extra_div_2" class="form-inline">
-					<input id="inpt_amt_30" type="text" name="ingr_" value="" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
-					<input id="inpt_unit_30"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
-					<input id="inpt_qlt_30"  type="text" name="ingr_" value="" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
-					<input id="inpt_ingr_30"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
-					<input id="inpt_msenp_30"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
-					<input id="inpt_strpd_30"  type="text" name="ingr_" value="" style="width: 200px; height: 30px; padding: 0px 0px 0px 5px;">			
+					<input id="inpt_amt_31" type="text" name="ingr_" value="" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="inpt_unit_31"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="inpt_qlt_31"  type="text" name="ingr_" value="" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="inpt_ingr_31"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="inpt_msenp_31"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="inpt_strpd_31"  type="text" name="ingr_" value="" style="width: 180px; height: 30px; padding: 0px 0px 0px 5px;">			
+					<input id="inpt_optional_31" type="checkbox">
 				</div>
 			</div>
 
@@ -327,7 +343,12 @@
 					<input id="{{ i.found_quality_id }}"  type="text" name="ingr_" value="{{ i.found_quality }}" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
 					<input id="{{ i.found_item_id }}"  type="text" name="ingr_" value="{{ i.found_item }}" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
 					<input id="{{ i.found_msenp_id }}"  type="text" name="ingr_" value="{{ i.found_msenp }}" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
-					<input id="{{ i.ingr_item_strpd_id }}"  type="text" name="ingr_" value="{{ i.ingr_item_strpd }}" style="width: 200px; height: 30px; padding: 0px 0px 0px 5px;">			
+					<input id="{{ i.ingr_item_strpd_id }}"  type="text" name="ingr_" value="{{ i.ingr_item_strpd }}" style="width: 180px; height: 30px; padding: 0px 0px 0px 5px;">			
+					{% if i.found_optional %}
+						<input id="{{ i.found_optional_id }}" type="checkbox" checked>
+					{% else %}
+						<input id="{{ i.found_optional_id }}" type="checkbox">
+					{% endif %}
 				</div>
 				{% endif %}
 			{% endfor %}
@@ -341,16 +362,18 @@
 					<input id="br_inpt_qlt_30"  type="text" name="ingr_" value="" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
 					<input id="br_inpt_ingr_30"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
 					<input id="br_inpt_msenp_30"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
-					<input id="br_inpt_strpd_30"  type="text" name="ingr_" value="" style="width: 200px; height: 30px; padding: 0px 0px 0px 5px;">			
+					<input id="br_inpt_strpd_30"  type="text" name="ingr_" value="" style="width: 180px; height: 30px; padding: 0px 0px 0px 5px;">			
+					<input id="inpt_optional_30" type="checkbox">
 				</div>
 
 				<div id="brecs_extra_div_2" class="form-inline">
-					<input id="br_inpt_amt_30" type="text" name="ingr_" value="" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
-					<input id="br_inpt_unit_30"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
-					<input id="br_inpt_qlt_30"  type="text" name="ingr_" value="" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
-					<input id="br_inpt_ingr_30"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
-					<input id="br_inpt_msenp_30"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
-					<input id="br_inpt_strpd_30"  type="text" name="ingr_" value="" style="width: 200px; height: 30px; padding: 0px 0px 0px 5px;">			
+					<input id="br_inpt_amt_31" type="text" name="ingr_" value="" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="br_inpt_unit_31"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="br_inpt_qlt_31"  type="text" name="ingr_" value="" style="width: 40px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="br_inpt_ingr_31"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="br_inpt_msenp_31"  type="text" name="ingr_" value="" style="width: 100px; height: 30px; padding: 0px 0px 0px 5px;">
+					<input id="br_inpt_strpd_31"  type="text" name="ingr_" value="" style="width: 180px; height: 30px; padding: 0px 0px 0px 5px;">			
+					<input id="inpt_optional_31" type="checkbox">
 				</div>
 			</div>
 			
@@ -358,23 +381,32 @@
 			<p></p>
 			<label>
 				Seasoning:<br>
+				<div class="row" style="padding: 5px 0px 5px 0px;">
+					
+					<div style="padding: 0px 15px 0px 0px;">
 					{% if salt_flag %}
 						<input id="salt_flag" type="checkbox" name="salt_flag" value="salt_flag" checked>salt<br>
 					{% else %}
 						<input id="salt_flag" type="checkbox" name="salt_flag" value="salt_flag">salt<br>
 					{% endif %}
+					</div>
 
-					{% if salt_and_pepper_flag %}
-						<input id="salt_and_pepper_flag" type="checkbox" name="salt_and_pepper_flag" value="salt_and_pepper_flag" checked>salt and pepper<br>
+					<div style="padding: 0px 15px 0px 15px;">
+					{% if pepper_flag %}
+						<input id="pepper_flag" type="checkbox" name="pepper_flag" value="pepper_flag" checked>pepper<br>
 					{% else %}
-						<input id="salt_and_pepper_flag" type="checkbox" name="salt_and_pepper_flag" value="salt_and_pepper_flag">salt and pepper<br>
+						<input id="pepper_flag" type="checkbox" name="pepper_flag" value="pepper_flag">pepper<br>
 					{% endif %}
+					</div>
 
-					{% if salt_and_white_pepper_flag %}
-						<input id="salt_and_white_pepper_flag" type="checkbox" name="salt_and_white_pepper_flag" value="salt_and_white_pepper_flag" checked>salt and white pepper<br>
+					<div style="padding: 0px 15px 0px 15px;">
+					{% if white_pepper_flag %}
+						<input id="white_pepper_flag" type="checkbox" name="white_pepper_flag" value="white_pepper_flag" checked>white pepper<br>
 					{% else %}
-						<input id="salt_and_white_pepper_flag" type="checkbox" name="salt_and_white_pepper_flag" value="salt_and_white_pepper_flag">salt and white pepper<br>
+						<input id="white_pepper_flag" type="checkbox" name="white_pepper_flag" value="white_pepper_flag">white pepper<br>
 					{% endif %}
+					</div>
+				</div>
 			</label>
 
 		</form>
@@ -384,8 +416,9 @@
 
 <!-- Submit btn -->
 <div class="row">
-	<button id="submit_btn" form="form11" value="Refresh">Refresh</button>
+	<button id="submit_btn" form="form11" value="Save">Save</button>
 </div>
+
 
 </body>
 </html>

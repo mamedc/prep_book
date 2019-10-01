@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.utils import six 
@@ -192,6 +192,11 @@ def parse_ctrl(request):
 		n_pages = len(list(set([x.split('rec')[0][:-1] for x in ocr_flds])))
 		n_recipes = len(os.listdir(rec_folder))
 
+	# Inspect
+	if True:
+		insp_folder = SITE_ROOT + '\\' + recipes_dict_folder
+		inspected_flds = len(os.listdir(insp_folder))
+
 	context = {
 		'total_images_len': total_images_len,
 		
@@ -229,6 +234,8 @@ def parse_ctrl(request):
 
 		'ocr_processed_imgs': n_pages,
 		'ocr_processed_recipes': n_recipes,
+
+		'inspected_recipes': inspected_flds,
 
 	}
 	
@@ -1099,8 +1106,8 @@ def search_amount(text):
 		return {'text_strp': out_text, 'amount_string': amount_string}
 
 
-def clean_and_save_recipe(data):
-	
+def clean_recipe(data):
+
 	recipe_dict = {
 		'recipe_id': data['recipe_id'][0],
 		'header_txt': data['header_txt'][0],
@@ -1111,8 +1118,11 @@ def clean_and_save_recipe(data):
 		'rec_yield': int(data['rec_yield'][0]),
 		'ingrs': [],
 		'brecs': [],
+		'salt_flag': data['salt_flag'][0],
+		'pepper_flag': data['pepper_flag'][0],
+		'white_pepper_flag': data['white_pepper_flag'][0],
 	}
-		
+
 	# Clean ingrs
 	for k in data.keys():
 		if (k[:5] == 'ingrs') & (len(''.join(data[k][:-1])) > 0):
@@ -1127,25 +1137,87 @@ def ajax_request_view(request):
 	
 	data = request.POST
 	data = dict(six.iterlists(data))
-	recipe_dict = clean_and_save_recipe(data)
-		
+	recipe_dict = clean_recipe(data)
+
+	# Discard blank 'ingrs' and update 'recipe_dict'
+	ingrs_no_blanks = []
+	for ingrs in recipe_dict['ingrs']:
+		ingrs_txt = ''.join(ingrs[:5]) # am. / un. / qlt. / ingr. / msenp.
+		if len(ingrs_txt) > 0:
+			ingrs_no_blanks.append(ingrs)
+	recipe_dict['ingrs'] = ingrs_no_blanks
+
+	# Discard blank 'brecs' and update 'recipe_dict'
+	brecs_no_blanks = []
+	for brecs in recipe_dict['brecs']:
+		brecs_txt = ''.join(brecs[:5]) # am. / un. / qlt. / ingr. / msenp.
+		if len(brecs_txt) > 0:
+			brecs_no_blanks.append(brecs)
+	recipe_dict['brecs'] = brecs_no_blanks
+
+	# Load index_dict
+	with open(SITE_ROOT + '\\static\\parse_recipes\\index_dict.pkl', 'rb') as f: 
+		index_dict =  pickle.load(f)
+
+	# Update index_dict['base_recipes']
+	base_recipes = [x[3] for x in recipe_dict['brecs']]
+	for base_recipe in base_recipes:
+		if (len(base_recipe) > 0) & (base_recipe not in index_dict['base_recipes']):
+			index_dict['base_recipes'].append(base_recipe)
+
+	# Update index_dict['ingredients']
+	ingredients = [x[3] for x in recipe_dict['ingrs']]
+	for ingredient in ingredients:
+		if (len(ingredient) > 0) & (ingredient not in index_dict['ingredients']):
+			index_dict['ingredients'].append(ingredient)
+
+	# Update index_dict['units']
+	units = [x[1] for x in recipe_dict['ingrs']] + [x[1] for x in recipe_dict['brecs']]
+	for unit in units:
+		if (len(unit) > 0) & (unit not in index_dict['units']):
+			index_dict['units'].append(unit)
+
+	# Update index_dict['qualities']
+	qualities = [x[2] for x in recipe_dict['ingrs']] + [x[2] for x in recipe_dict['brecs']]
+	for quality in qualities:
+		if (len(quality) > 0) & (quality not in index_dict['qualities']):
+			index_dict['qualities'].append(quality)
+
+	# Update index_dict['mises_en_plis']
+	mises_en_plis = [x[4] for x in recipe_dict['ingrs']] + [x[4] for x in recipe_dict['brecs']]
+	for mise_en_plis in mises_en_plis:
+		if (len(mise_en_plis) > 0) & (mise_en_plis not in index_dict['mises_en_plis']):
+			index_dict['mises_en_plis'].append(mise_en_plis)
+
+	# Save index_dict
+	with open(SITE_ROOT + '\\static\\parse_recipes\\index_dict.pkl', 'wb') as f: 
+	    pickle.dump(index_dict, f, pickle.HIGHEST_PROTOCOL)
+
+
+	assert False, recipe_dict
+	
+
+
+
+
 	# Save recipe dict
 	with open(SITE_ROOT + '\\' + recipes_dict_folder + '\\' + recipe_dict['recipe_id'] + '.pkl', 'wb') as f: 
 	 	pickle.dump(recipe_dict, f, pickle.HIGHEST_PROTOCOL)
 
 	return HttpResponse("<html><body></body></html>")
-	
-# Redirect to next recipe
-# Remember to get Seasoning
-# Remember to use optional btn
+
 # update index_dict
+# save index dict
+
+# http://127.0.0.1:8000/inspect_recipe/IMG_4405_rec1
 
 
-def inspect_recipe(request, recipe_fld):
+def inspect_recipe(request, recipe_id):
 
+	
 	# Define static path for view.py and html template
-	proc_path_html = 'parse_recipes/01_processed_recipes/' + recipe_fld
-	proc_path_py = 'static\\parse_recipes\\01_processed_recipes\\' + recipe_fld
+	proc_path_html = 'parse_recipes/01_processed_recipes/' + recipe_id
+	proc_path_py = 'static\\parse_recipes\\01_processed_recipes\\' + recipe_id
 	
 	# Load imgs
 	header_img = proc_path_html + '/header_img.jpg'
@@ -1158,20 +1230,20 @@ def inspect_recipe(request, recipe_fld):
 		ocr_dict = pickle.load(f)
 
 	context = {
-		'recipe_id': recipe_fld,
+		'recipe_id': recipe_id,
 		'header_img': header_img,
 		'footer_img': footer_img,
 		'proc_img': proc_img,
 		'ingr_img': ingr_img,
 		'ocr_dict': ocr_dict,
 		
+		'white_pepper_flag': False,
 		'salt_flag': False,
-		'salt_and_pepper_flag': False,
-		'salt_and_white_pepper_flag': False,
-	}
+		'pepper_flag': False,
 
-	context['ingrs_strpd'] = []
-		
+		'ingrs_strpd': [],
+	}
+			
 	# Load index_dict
 	with open(SITE_ROOT + '\\static\\parse_recipes\\index_dict.pkl', 'rb') as f: 
 		index_dict =  pickle.load(f)
@@ -1183,14 +1255,20 @@ def inspect_recipe(request, recipe_fld):
 		
 		# Seasoning
 
+		# If ingr_item == 'salt and white pepper'
+		if 'white pepper' in ingr_item: 
+			context['white_pepper_flag'] = True
+			ingr_item = ingr_item.replace('white pepper', '')
+
 		# If ingr_item == 'salt'
-		if ingr_item == 'salt': context['salt_flag'] = True
+		elif 'salt' in ingr_item: 
+			context['salt_flag'] = True
+			ingr_item = ingr_item.replace('salt', '')
 
 		# If ingr_item == 'salt and pepper'
-		elif ingr_item == 'salt and pepper': context['salt_and_pepper_flag'] = True
-
-		# If ingr_item == 'salt and white pepper'
-		elif ingr_item == 'salt and white pepper': context['salt_and_white_pepper_flag'] = True
+		elif 'pepper' in ingr_item: 
+			context['pepper_flag'] = True
+			ingr_item = ingr_item.replace('pepper', '')
 
 
 		# Ingredient or base recipe
@@ -1209,6 +1287,13 @@ def inspect_recipe(request, recipe_fld):
 				if len(found_brec) > 0: 
 					ingr_flag = False
 					break
+
+			# Search 'optional' ingredient
+			if 'optional' in ingr_item_strpd:
+				found_optional = True
+				ingr_item_strpd = ingr_item_strpd.replace('optional', '')
+			else:
+				found_optional = False
 
 			# Search n_grams at 'units'
 			index_list = index_dict['units']
@@ -1244,7 +1329,8 @@ def inspect_recipe(request, recipe_fld):
 					'found_quality_id': 'inpt_qlt_' + str(ingr_n), 'found_quality': found_quality, 
 					'found_item_id': 'inpt_ingr_' + str(ingr_n),	'found_item': found_item, 
 					'found_msenp_id': 'inpt_msenp_' + str(ingr_n), 'found_msenp': found_msenp, 
-					'ingr_item_strpd_id': 'inpt_strpd_' + str(ingr_n), 'ingr_item_strpd': ingr_item_strpd
+					'ingr_item_strpd_id': 'inpt_strpd_' + str(ingr_n), 'ingr_item_strpd': ingr_item_strpd,
+					'found_optional_id': 'found_optional_' + str(ingr_n), 'found_optional': found_optional,
 				})
 				ingr_n += 1
 				
@@ -1256,33 +1342,36 @@ def inspect_recipe(request, recipe_fld):
 					'found_quality_id': 'br_inpt_qlt_' + str(brec_n), 'found_quality': found_quality, 
 					'found_item_id': 'br_inpt_ingr_' + str(brec_n),	'found_item': found_brec, 
 					'found_msenp_id': 'br_inpt_msenp_' + str(brec_n), 'found_msenp': found_msenp, 
-					'ingr_item_strpd_id': 'br_inpt_strpd_' + str(brec_n), 'ingr_item_strpd': ingr_item_strpd
+					'ingr_item_strpd_id': 'br_inpt_strpd_' + str(brec_n), 'ingr_item_strpd': ingr_item_strpd,
+					'found_optional_id': 'found_optional_' + str(ingr_n), 'found_optional': found_optional,
 				})
 				brec_n += 1
 	
 	return render(request, 'parse_recipes/inspect_recipe.html', context)
 
-		# Update index dict
-		#index_dict['ingredients'] = index_list
 
-	# Save index dict
-	#with open(SITE_ROOT + '\\static\\parse_recipes\\index_dict.pkl', 'wb') as f: 
-		#pickle.dump(index_dict, f, pickle.HIGHEST_PROTOCOL)
-		
-		#, , base_recipes, mises_en_plis, units and qualities
+def inspect_all_recipes(request):
 
+	# Compare folders at '01_processed_recipes' and dicts at '02_recipe_dicts'
+	# to check which recipes haven't been inspected yet
+	all_recs_list_to_inspect = next(os.walk(os.path.join(SITE_ROOT, processed_files_path)))[1][:3]
+	inspected_recs = next(os.walk(SITE_ROOT + '\\' + recipes_dict_folder))[2]
+	inspected_recs = [x.split('.')[0] for x in inspected_recs]
+	recs_to_inspect = list(set(all_recs_list_to_inspect) - set(inspected_recs))
+	
+	# Get the first recipe at 'recs_to_inspect' and run 'inspect_recipe' view
+	# When the 'save' button at the inspection html is pressed, it calls the
+	# 'ajax_request_view', that cleans the data comming from the ajax post and
+	# save the recipe dict at '02_recipe_dicts'. Finally, the ajax post returns
+	# to 'success' at the js script at 'inspect_recipe.html', which, by it's turn
+	# calls 'inspect_all_recipes' view, and the process restart with the previous
+	# lines comparisons.
+	# When there is no more recipes to inspect, it returns 'Done!', and all the 
+	# recipes dicts will be recoreded at '02_recipe_dicts'.
+	if len(recs_to_inspect) > 0:
+		return redirect('inspect_recipe_pg', recipe_id = recs_to_inspect[0])
+	else:
+		return HttpResponse("<html><body>Done!</body></html>")
 
-# def inspect_all_recipes(request):
-
-# 	img_list = next(os.walk(os.path.join(SITE_ROOT, img_files_path)))[2][:5]
-
-# 	context = {'image_pg': {}}
-
-# 	for img_index, img_file in enumerate(img_list):
-# 		output_flds = run_ocr_on_img(img_index)
-# 		output_flds = [x.split('\\')[-1] for x in output_flds]
-# 		context['image_pg'].update({img_file: output_flds})
-
-# 	return render(request, 'parse_recipes/ocr_results_all_imgs.html', context)
-
+	
 	
