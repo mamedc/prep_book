@@ -15,4 +15,5 @@ urlpatterns = [
 	path('trim_recipes/<int:img_index>/', pe_views.trim_recipes, name='trim_recipes_pg'),
     path('run_ocr_all_imgs/', pe_views.run_ocr_all_imgs, name='run_ocr_all_imgs_pg'),
     path('inspect_recipe/<str:recipe_fld>', pe_views.inspect_recipe, name='inspect_recipe_pg'),
+    path('ajax_request', pe_views.ajax_request_view, name='ajax_request_pg'),
 ]

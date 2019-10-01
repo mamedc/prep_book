@@ -96,7 +96,7 @@
 		}
 			
 		var csrftoken = getCookie('csrftoken');
-		console.log(csrftoken);
+		console.log('Print Token', csrftoken);
 
 		//Ajax call
 		function csrfSafeMethod(method) {
@@ -114,20 +114,18 @@
 		});
 
 
-
-
 		// Ajax Post: All forms
         $(document).ready(function() {
-
-			$("#SubmitForm").submit(function(e) {
-
+			$("#submit_btn").click(function(e) {
+			
 				dict = {
+					recipe_id: "{{ recipe_id }}", 
 					header_txt: document.getElementById('header_txt').value,
 					pg_number: document.getElementById('pg_number').value,
 					recipe_name: document.getElementById('recipe_name').value,
 					procedure: document.getElementById('procedure').value,
 					recipe_name_italian: document.getElementById('recipe_name_italian').value,
-					yield: document.getElementById('yield').value,
+					rec_yield: document.getElementById('yield').value,
 					ingrs: [],
 					brecs: [],
 				};
@@ -188,19 +186,21 @@
 					// Append to 'dict[brecs]'
 					dict['brecs'].push(brecs_row_vals)}
 
-				
 				// prevent from normal form behaviour
 		      	e.preventDefault();
-		    			    	
-		      	$.ajax({
+
+				$.ajax({
 		      		type: 'POST',
-		      		url:  "{% url 'inspect_recipe_pg' '#' %}",
+		      		url:  "{% url 'ajax_request_pg' %}",
+		      		headers: {'X-Requested-With': 'XMLHttpRequest'},
 		      		data: dict,
-		      		success: function(response) { console.log(response) },
-		      		error: function(response) { console.log(response) }
+		      		success: function(response) { console.log('r0') },
+		      		error: function(response) { console.log('r1') }
 		      	});
+
 			});
 		});
+
 
 	</script>
 
@@ -353,7 +353,6 @@
 					<input id="br_inpt_strpd_30"  type="text" name="ingr_" value="" style="width: 200px; height: 30px; padding: 0px 0px 0px 5px;">			
 				</div>
 			</div>
-
 			
 
 			<p></p>
@@ -383,20 +382,10 @@
 </div>
 
 
-
 <!-- Submit btn -->
 <div class="row">
-	<form id="SubmitForm" method="post">
-		{% csrf_token %}
-		<input type="submit" name="inp-submit"/>
-	</form>
+	<button id="submit_btn" form="form11" value="Refresh">Refresh</button>
 </div>
-
-
-
-
-
-
 
 </body>
 </html>
