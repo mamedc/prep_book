@@ -14,7 +14,7 @@
 
 		.div1 {
 			text-align: center;
-			border: 1px solid black;
+			//border: 1px solid black;
 			padding: 25px 0px 25px 0px;"
 		}
 
@@ -24,23 +24,23 @@
  			padding:0 15px;
 		}
 
-
 		.row {	
 			display: flex;
 			padding: 25px 0px 25px 0px;
-			border: 1px solid red;
+			//border: 1px solid red;
 		}
 
 		.first-column {
 		    flex: 0 0 350px;
 		    float: left;
-		    border: 1px solid green;
+		    //border: 1px solid green;
+		    padding: 0px 0px 0px 0px;
 		}
 
 		.second-column {
 		    flex: 1 1 350px;
 		    float: right;
-		    border: 1px solid cyan;
+		    //border: 1px solid cyan;
 		    padding: 0px 0px 0px 10px;
 		}
 
@@ -128,10 +128,23 @@
 					rec_yield: document.getElementById('yield').value,
 					ingrs: [],
 					brecs: [],
-					salt_flag: document.getElementById('salt_flag').checked,
-					pepper_flag: document.getElementById('pepper_flag').checked,
-					white_pepper_flag: document.getElementById('white_pepper_flag').checked,
+					seasonings: {},
 				};
+
+				// Add seasonings to dict
+				seasoning_box = document.getElementById('seasoning_box').getElementsByTagName('input');
+				for (i = 0; i < seasoning_box.length; i++) {
+					dict['seasonings'][seasoning_box[i].value] = seasoning_box[i].checked
+				}
+
+				// Get new seasonings
+				new_seasonings = document.getElementById('new_seasonings').getElementsByTagName('input');
+				for (i = 0; i < new_seasonings.length; i++) {
+					if (new_seasonings[i].value.length > 0) {
+						dict['seasonings'][new_seasonings[i].value] = "true"
+					}
+				}
+
 
 				// Add ingredients to 'dict'
 				// Loop over each ingr set row
@@ -225,8 +238,6 @@
 
 			});
 		});
-
-
 	</script>
 
 	<title>Inspect Recipe</title>
@@ -247,6 +258,7 @@
 		<input class="input1" id="header_txt" type="text" name="header_txt" value="{{ ocr_dict.header_txt }}">
 	</form>
 </div>
+
 <!-- Footer (pg number) -->
 <div class="div1">	
 	<img src="{% static footer_img %}" width=500 border="1"><br>
@@ -256,6 +268,7 @@
 		<input class="input1" id="pg_number" type="text" name="footer_txt" value="{{ ocr_dict.footer_txt }}">
 	</form>
 </div>
+
 <!-- Recipe name and procedure -->
 <div class="row">	
 	<div class="first-column">
@@ -274,6 +287,7 @@
 		</form>
 	</div>
 </div>
+
 <!-- Ingredients -->
 <div class="row">	
 	<div class="first-column"><img src="{% static ingr_img %}" width=350 border="1"></div>
@@ -376,36 +390,30 @@
 					<input id="inpt_optional_31" type="checkbox">
 				</div>
 			</div>
-			
-
+		
 			<p></p>
 			<label>
 				Seasoning:<br>
-				<div class="row" style="padding: 5px 0px 5px 0px;">
-					
-					<div style="padding: 0px 15px 0px 0px;">
-					{% if salt_flag %}
-						<input id="salt_flag" type="checkbox" name="salt_flag" value="salt_flag" checked>salt<br>
-					{% else %}
-						<input id="salt_flag" type="checkbox" name="salt_flag" value="salt_flag">salt<br>
-					{% endif %}
-					</div>
+				<div id="seasoning_box" class="row" style="padding: 5px 0px 5px 0px;">
+					{% for key, value in seasoning.items %}
+						<div style="padding: 0px 15px 0px 0px;">
+							{% if value %}
+								<input type="checkbox" value="{{ key }}" checked>{{ key }}<br>
+							{% else %}
+								<input type="checkbox" value="{{ key }}">{{ key }}<br>
+							{% endif %}
+						</div>
+					{% endfor %}
+				</div>
+			</label>
 
-					<div style="padding: 0px 15px 0px 15px;">
-					{% if pepper_flag %}
-						<input id="pepper_flag" type="checkbox" name="pepper_flag" value="pepper_flag" checked>pepper<br>
-					{% else %}
-						<input id="pepper_flag" type="checkbox" name="pepper_flag" value="pepper_flag">pepper<br>
-					{% endif %}
-					</div>
-
-					<div style="padding: 0px 15px 0px 15px;">
-					{% if white_pepper_flag %}
-						<input id="white_pepper_flag" type="checkbox" name="white_pepper_flag" value="white_pepper_flag" checked>white pepper<br>
-					{% else %}
-						<input id="white_pepper_flag" type="checkbox" name="white_pepper_flag" value="white_pepper_flag">white pepper<br>
-					{% endif %}
-					</div>
+			<p></p>
+			<label>
+				New seasoning (will be added to index):<br>
+				<div id="new_seasonings">
+					<input id="new_seasoning_1" type="text" name="new_seasoning">
+					<input id="new_seasoning_2" type="text" name="new_seasoning">
+					<input id="new_seasoning_3" type="text" name="new_seasoning">
 				</div>
 			</label>
 
@@ -413,12 +421,10 @@
 	</div>
 </div>
 
-
 <!-- Submit btn -->
-<div class="row">
-	<button id="submit_btn" form="form11" value="Save">Save</button>
+<div style="display: flex; align-items: center; justify-content: center;">
+	<button id="submit_btn" style="height: 40px; width: 500px;" form="form11" value="Save">Save</button>
 </div>
-
 
 </body>
 </html>

@@ -1118,9 +1118,7 @@ def clean_recipe(data):
 		'rec_yield': int(data['rec_yield'][0]),
 		'ingrs': [],
 		'brecs': [],
-		'salt_flag': data['salt_flag'][0],
-		'pepper_flag': data['pepper_flag'][0],
-		'white_pepper_flag': data['white_pepper_flag'][0],
+		'seasonings': {},
 	}
 
 	# Clean ingrs
@@ -1130,6 +1128,15 @@ def clean_recipe(data):
 		if (k[:5] == 'brecs') & (len(''.join(data[k][:-1])) > 0):
 			recipe_dict['brecs'].append(data[k])
 
+	# Clean seasonings
+	for k in data.keys():
+		if k[:10] == 'seasonings':
+			if data[k][0] == 'true':
+				k_val = True
+			else:
+				k_val = False
+			recipe_dict['seasonings'][k.split('[')[1][:-1]] = k_val
+	
 	return recipe_dict
 
 
@@ -1189,16 +1196,15 @@ def ajax_request_view(request):
 		if (len(mise_en_plis) > 0) & (mise_en_plis not in index_dict['mises_en_plis']):
 			index_dict['mises_en_plis'].append(mise_en_plis)
 
+	# Update index_dict['seasonings']
+	rec_seasonings = [x for x in recipe_dict['seasonings'].keys() if recipe_dict['seasonings'][x]]
+	for seas_ in rec_seasonings:
+		if seas_ not in index_dict['seasoning']:
+			index_dict['seasoning'].append(seas_)
+
 	# Save index_dict
 	with open(SITE_ROOT + '\\static\\parse_recipes\\index_dict.pkl', 'wb') as f: 
 	    pickle.dump(index_dict, f, pickle.HIGHEST_PROTOCOL)
-
-
-	assert False, recipe_dict
-	
-
-
-
 
 	# Save recipe dict
 	with open(SITE_ROOT + '\\' + recipes_dict_folder + '\\' + recipe_dict['recipe_id'] + '.pkl', 'wb') as f: 
@@ -1206,10 +1212,6 @@ def ajax_request_view(request):
 
 	return HttpResponse("<html><body></body></html>")
 
-# update index_dict
-# save index dict
-
-# http://127.0.0.1:8000/inspect_recipe/IMG_4405_rec1
 
 
 def inspect_recipe(request, recipe_id):
@@ -1236,11 +1238,7 @@ def inspect_recipe(request, recipe_id):
 		'proc_img': proc_img,
 		'ingr_img': ingr_img,
 		'ocr_dict': ocr_dict,
-		
-		'white_pepper_flag': False,
-		'salt_flag': False,
-		'pepper_flag': False,
-
+		'seasoning': {}, 
 		'ingrs_strpd': [],
 	}
 			
@@ -1248,28 +1246,22 @@ def inspect_recipe(request, recipe_id):
 	with open(SITE_ROOT + '\\static\\parse_recipes\\index_dict.pkl', 'rb') as f: 
 		index_dict =  pickle.load(f)
 
+	# Load seasoning index to context:
+	for seas_ in index_dict['seasoning']:
+		context['seasoning'][seas_] = False
+	
 	# For each ingredient item:
 	ingr_n, brec_n = 0, 0
 	
 	for ingr_item in context['ocr_dict']['ingr_txt']:
 		
 		# Seasoning
+		reverse_sorted_seasoning = [' '.join(y) for y in sorted([x.split(' ') for x in index_dict['seasoning']], key=len, reverse = True)]
+		for seas_ in reverse_sorted_seasoning:
 
-		# If ingr_item == 'salt and white pepper'
-		if 'white pepper' in ingr_item: 
-			context['white_pepper_flag'] = True
-			ingr_item = ingr_item.replace('white pepper', '')
-
-		# If ingr_item == 'salt'
-		elif 'salt' in ingr_item: 
-			context['salt_flag'] = True
-			ingr_item = ingr_item.replace('salt', '')
-
-		# If ingr_item == 'salt and pepper'
-		elif 'pepper' in ingr_item: 
-			context['pepper_flag'] = True
-			ingr_item = ingr_item.replace('pepper', '')
-
+			if seas_ in ingr_item:
+				context['seasoning'][seas_] = True
+				ingr_item = ingr_item.replace(seas_, '')
 
 		# Ingredient or base recipe
 		else:
