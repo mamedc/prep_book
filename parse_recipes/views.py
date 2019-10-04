@@ -25,7 +25,7 @@ img_disp_width, img_disp_height = 1000, 1333.333333
 
 def get_img_list(img_files_path):
 	SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
-	img_list = next(os.walk(os.path.join(SITE_ROOT, img_files_path)))[2][:5]
+	img_list = next(os.walk(os.path.join(SITE_ROOT, img_files_path)))[2]
 	return img_list
 
 
@@ -64,7 +64,7 @@ def parse_ctrl(request):
 	# Load list of files to trim
 	SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 	img_files_path = 'static\\\\parse_recipes\\\\00_original_book_pics'
-	img_list = next(os.walk(os.path.join(SITE_ROOT, img_files_path)))[2][:5]
+	img_list = next(os.walk(os.path.join(SITE_ROOT, img_files_path)))[2]
 	total_images_len = len(img_list)
 
 	# Load 'trim_dict'
@@ -247,7 +247,7 @@ def trim_left(request, img_index):
 	# List of files to trim
 	SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 	img_files_path = 'static\\\\parse_recipes\\\\00_original_book_pics'
-	img_list = next(os.walk(os.path.join(SITE_ROOT, img_files_path)))[2][:5]
+	img_list = next(os.walk(os.path.join(SITE_ROOT, img_files_path)))[2]
 	
 	# POST
 	if request.method == 'POST':
@@ -316,7 +316,7 @@ def trim_right(request, img_index):
 	# List of files to trim
 	SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 	img_files_path = 'static\\\\parse_recipes\\\\00_original_book_pics'
-	img_list = next(os.walk(os.path.join(SITE_ROOT, img_files_path)))[2][:5]
+	img_list = next(os.walk(os.path.join(SITE_ROOT, img_files_path)))[2]
 	
 	# POST
 	if request.method == 'POST':
@@ -385,7 +385,7 @@ def trim_top(request, img_index):
 	# List of files to trim
 	SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 	img_files_path = 'static\\\\parse_recipes\\\\00_original_book_pics'
-	img_list = next(os.walk(os.path.join(SITE_ROOT, img_files_path)))[2][:5]
+	img_list = next(os.walk(os.path.join(SITE_ROOT, img_files_path)))[2]
 	
 	# POST
 	if request.method == 'POST':
@@ -454,7 +454,7 @@ def trim_bottom(request, img_index):
 	# List of files to trim
 	SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 	img_files_path = 'static\\\\parse_recipes\\\\00_original_book_pics'
-	img_list = next(os.walk(os.path.join(SITE_ROOT, img_files_path)))[2][:5]
+	img_list = next(os.walk(os.path.join(SITE_ROOT, img_files_path)))[2]
 	
 	# POST
 	if request.method == 'POST':
@@ -523,7 +523,7 @@ def trim_header(request, img_index):
 	# List of files to trim
 	SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 	img_files_path = 'static\\\\parse_recipes\\\\00_original_book_pics'
-	img_list = next(os.walk(os.path.join(SITE_ROOT, img_files_path)))[2][:5]
+	img_list = next(os.walk(os.path.join(SITE_ROOT, img_files_path)))[2]
 	
 	# POST
 	if request.method == 'POST':
@@ -592,7 +592,7 @@ def trim_footer(request, img_index):
 	# List of files to trim
 	SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 	img_files_path = 'static\\\\parse_recipes\\\\00_original_book_pics'
-	img_list = next(os.walk(os.path.join(SITE_ROOT, img_files_path)))[2][:5]
+	img_list = next(os.walk(os.path.join(SITE_ROOT, img_files_path)))[2]
 	
 	# POST
 	if request.method == 'POST':
@@ -661,7 +661,7 @@ def split_recipe_vertical(request, img_index):
 	# List of files to trim
 	SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 	img_files_path = 'static\\\\parse_recipes\\\\00_original_book_pics'
-	img_list = next(os.walk(os.path.join(SITE_ROOT, img_files_path)))[2][:5]
+	img_list = next(os.walk(os.path.join(SITE_ROOT, img_files_path)))[2]
 	
 	# POST
 	if request.method == 'POST':
@@ -857,7 +857,7 @@ def ocr_on_ingredients(ingr_img):
 	text = pytesseract.image_to_string(Image.open(temp_img))
     
 	with open(temp_img, 'rb') as f: ingredients_img = f.read()
-    #os.remove(temp_img)
+	os.remove(temp_img)
     
     # Remove double breaks
 	t = text.splitlines()
@@ -967,7 +967,7 @@ def run_ocr_on_img(img_index):
 
 def run_ocr_all_imgs(request):
 
-	img_list = next(os.walk(os.path.join(SITE_ROOT, img_files_path)))[2][:5]
+	img_list = next(os.walk(os.path.join(SITE_ROOT, img_files_path)))[2]
 
 	context = {'image_pg': {}}
 
@@ -1346,7 +1346,7 @@ def inspect_all_recipes(request):
 
 	# Compare folders at '01_processed_recipes' and dicts at '02_recipe_dicts'
 	# to check which recipes haven't been inspected yet
-	all_recs_list_to_inspect = next(os.walk(os.path.join(SITE_ROOT, processed_files_path)))[1][:3]
+	all_recs_list_to_inspect = next(os.walk(os.path.join(SITE_ROOT, processed_files_path)))[1]
 	inspected_recs = next(os.walk(SITE_ROOT + '\\' + recipes_dict_folder))[2]
 	inspected_recs = [x.split('.')[0] for x in inspected_recs]
 	recs_to_inspect = list(set(all_recs_list_to_inspect) - set(inspected_recs))
